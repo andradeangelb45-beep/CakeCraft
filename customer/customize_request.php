@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 require_once "../database.php";
@@ -28,7 +27,9 @@ $allowed_flavors = [
     "Other"
 ];
 
-// Generate valid cake size values for database validation
+$allowed_delivery_methods = ["Pickup", "Delivery"];
+
+// Generate valid cake size values
 $allowed_sizes = [];
 
 foreach ($regular_sizes as $size) {
@@ -55,6 +56,7 @@ $old_flavor = "";
 $old_color = "";
 $old_quantity = "1";
 $old_date = "";
+$old_delivery_method = "Delivery";
 $old_address = "";
 $old_instructions = "";
 
@@ -68,10 +70,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $old_color = trim($_POST["color"] ?? "");
     $old_quantity = trim($_POST["quantity"] ?? "1");
     $old_date = trim($_POST["preferred_date"] ?? "");
+
+    $old_delivery_method = trim($_POST["delivery_method"] ?? "Delivery");
     $old_address = trim($_POST["delivery_address"] ?? "");
+
     $old_instructions = trim($_POST["special_instructions"] ?? "");
 
-    // Construct the combined cake size value
+    // Construct cake size value
     if ($old_type === "regular") {
 
         $old_size = $old_base_size . " - " . $old_layers . " " .
@@ -84,6 +89,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     } elseif ($old_type === "cupcakes") {
 
         $old_size = $old_base_size;
+    }
+
+    // Pickup does not require a delivery address
+    if ($old_delivery_method === "Pickup") {
+        $old_address = "";
     }
 
     // Validate size and flavor
@@ -137,7 +147,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         $message = "Please choose a valid preferred date (today or a future date).";
 
-    } elseif ($old_address === "") {
+    } elseif (
+        !in_array($old_delivery_method, $allowed_delivery_methods, true)
+    ) {
+
+        $message = "Please select a valid delivery method.";
+
+    } elseif (
+        $old_delivery_method === "Delivery" &&
+        $old_address === ""
+    ) {
 
         $message = "Please enter your delivery address.";
 
@@ -213,17 +232,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                 color,
                                 quantity,
                                 preferred_date,
+                                delivery_method,
                                 delivery_address,
                                 special_instructions,
                                 request_status
                             )
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')"
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')"
                         );
 
                         $quantity = (int) $old_quantity;
 
                         $stmt->bind_param(
-                            "issssisss",
+                            "issssissss",
                             $customer_id,
                             $image_name,
                             $old_size,
@@ -231,6 +251,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             $old_color,
                             $quantity,
                             $old_date,
+                            $old_delivery_method,
                             $old_address,
                             $old_instructions
                         );
@@ -245,6 +266,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                         $is_success = true;
 
+                        // Reset form
                         $old_type = "";
                         $old_base_size = "";
                         $old_layers = "";
@@ -252,6 +274,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $old_flavor = "";
                         $old_color = "";
                         $old_date = "";
+                        $old_delivery_method = "Delivery";
                         $old_address = "";
                         $old_instructions = "";
                         $old_quantity = "1";
@@ -489,6 +512,54 @@ textarea {
     background: var(--rose-dark);
 }
 
+/* Delivery method */
+
+.delivery-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.delivery-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+}
+
+.delivery-option:has(input:checked) {
+    border-color: var(--rose-deep);
+    background: #fff5f3;
+}
+
+.delivery-option input {
+    width: 18px;
+    height: 18px;
+    margin-top: 3px;
+    accent-color: var(--rose-deep);
+}
+
+.delivery-option strong {
+    display: block;
+    font-size: 15px;
+}
+
+.delivery-option span {
+    display: block;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top: 3px;
+}
+
+#delivery_address_field {
+    margin-top: 18px;
+}
+
 @media(max-width:600px) {
 
     header {
@@ -506,7 +577,8 @@ textarea {
         padding: 22px 18px;
     }
 
-    .grid {
+    .grid,
+    .delivery-options {
         grid-template-columns: 1fr;
     }
 }
@@ -542,6 +614,7 @@ textarea {
     <div class="notice">
         <strong>Price notice:</strong>
         No price is shown when you submit your request. The admin will provide a quotation after reviewing your design.
+        Your delivery fee, if applicable, will also be determined by the admin after approval.
     </div>
 
     <?php if ($message !== ""): ?>
@@ -733,9 +806,61 @@ textarea {
 
             </div>
 
-            <!-- Delivery Address -->
+            <!-- Pickup or Delivery -->
 
             <div class="field">
+
+                <label>
+                    How would you like to receive your cake? *
+                </label>
+
+                <div class="delivery-options">
+
+                    <label class="delivery-option">
+
+                        <input
+                            type="radio"
+                            name="delivery_method"
+                            value="Pickup"
+                            <?php echo $old_delivery_method === "Pickup" ? "checked" : ""; ?>
+                            required
+                        >
+
+                        <div>
+                            <strong>Pick-up</strong>
+                            <span>Pick up your cake at the shop. No delivery fee.</span>
+                        </div>
+
+                    </label>
+
+                    <label class="delivery-option">
+
+                        <input
+                            type="radio"
+                            name="delivery_method"
+                            value="Delivery"
+                            <?php echo $old_delivery_method === "Delivery" ? "checked" : ""; ?>
+                            required
+                        >
+
+                        <div>
+                            <strong>Delivery</strong>
+                            <span>Admin will determine the delivery fee after reviewing your order.</span>
+                        </div>
+
+                    </label>
+
+                </div>
+
+            </div>
+
+            <!-- Delivery Address (shown only when Delivery is selected) -->
+
+            <div
+                class="field"
+                id="delivery_address_field"
+                <?php echo $old_delivery_method !== "Delivery" ? 'style="display:none;"' : ""; ?>
+            >
 
                 <label for="delivery_address">
                     Delivery address *
@@ -744,9 +869,13 @@ textarea {
                 <textarea
                     id="delivery_address"
                     name="delivery_address"
-                    placeholder="Enter complete delivery address"
-                    required
+                    placeholder="Enter your complete delivery address"
+                    <?php echo $old_delivery_method === "Delivery" ? "required" : ""; ?>
                 ><?php echo htmlspecialchars($old_address); ?></textarea>
+
+                <p class="hint">
+                    Please provide your complete address. The delivery fee will be added after Admin approves your request.
+                </p>
 
             </div>
 
@@ -794,6 +923,39 @@ const previousType = <?php echo json_encode($old_type); ?>;
 const previousSize = <?php echo json_encode($old_base_size); ?>;
 const previousLayers = <?php echo json_encode($old_layers); ?>;
 
+// Delivery fields
+const deliveryRadios = document.querySelectorAll('input[name="delivery_method"]');
+const deliveryAddressField = document.getElementById("delivery_address_field");
+const deliveryAddressInput = document.getElementById("delivery_address");
+
+// Toggle address field based on selected delivery method
+function updateDeliveryFields() {
+
+    const selectedMethod = document.querySelector(
+        'input[name="delivery_method"]:checked'
+    );
+
+    if (selectedMethod && selectedMethod.value === "Delivery") {
+
+        deliveryAddressField.style.display = "";
+        deliveryAddressInput.required = true;
+
+    } else {
+
+        deliveryAddressField.style.display = "none";
+        deliveryAddressInput.required = false;
+        deliveryAddressInput.value = "";
+
+    }
+}
+
+deliveryRadios.forEach(radio => {
+    radio.addEventListener("change", updateDeliveryFields);
+});
+
+// Initialize delivery fields on page load
+updateDeliveryFields();
+
 // Update size choices based on cake type
 function updateSizes(selectedSize = "") {
 
@@ -802,10 +964,12 @@ function updateSizes(selectedSize = "") {
     sizeSelect.innerHTML = '<option value="">Select size</option>';
 
     if (!cakeType || !sizeOptions[cakeType]) {
+
         sizeSelect.disabled = true;
         layersField.style.display = "none";
         layersSelect.required = false;
         layersSelect.value = "";
+
         return;
     }
 
@@ -826,7 +990,7 @@ function updateSizes(selectedSize = "") {
 
     });
 
-    // Regular cakes need layer selection
+    // Regular cakes require layer selection
     if (cakeType === "regular") {
 
         layersField.style.display = "";
@@ -839,16 +1003,17 @@ function updateSizes(selectedSize = "") {
         layersSelect.value = "";
 
     }
-
 }
 
-// Initialize form on page load
+// Initialize form
 cakeTypeSelect.addEventListener("change", function () {
+
     updateSizes();
     layersSelect.value = "";
+
 });
 
-// Initialize when loading after validation error
+// Restore values after validation error
 if (previousType) {
 
     cakeTypeSelect.value = previousType;

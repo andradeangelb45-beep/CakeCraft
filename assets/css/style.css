@@ -3,26 +3,31 @@
 /* ---------- TOKENS ---------- */
 
 :root {
-    --bg: #ffffff;
-    --bg-soft: #fde8ef;
-    --bg-tint: #fff5f8;
+    --bg: #fffaf7;
+    --bg-soft: #f7eeea;
+    --bg-tint: #f4e5df;
     --surface: #ffffff;
-    --ink: #2a1d24;
-    --ink-soft: #6d5b64;
-    --rose: #f0558f;
-    --rose-deep: #e0407d;
-    --rose-darker: #c42d68;
-    --line: #f7cfdd;
-    --footer: #fde8ef;
+
+    --ink: #3b2724;
+    --ink-soft: #6f5d57;
+
+    --rose: #c47c78;
+    --rose-deep: #a65a56;
+    --rose-darker: #8c4845;
+
+    --line: #efe0da;
+    --footer: #f7eeea;
 
     --font-body: 'DM Sans', system-ui, sans-serif;
     --font-display: 'Playfair Display', Georgia, serif;
 
     --gutter: max(6%, calc((100vw - 1180px) / 2));
     --radius: 14px;
-    --radius-btn: 8px;
-    --shadow: 0 6px 24px rgba(240, 85, 143, 0.10);
-    --shadow-lift: 0 14px 34px rgba(240, 85, 143, 0.20);
+    --radius-btn: 999px;
+
+    --shadow: 0 6px 24px rgba(73, 48, 45, 0.08);
+    --shadow-lift: 0 14px 34px rgba(73, 48, 45, 0.14);
+
     --ease: cubic-bezier(.2, .7, .2, 1);
 }
 
@@ -65,9 +70,8 @@ header {
     position: sticky;
     top: 0;
     z-index: 50;
-    border-top: 6px solid var(--rose);
-    background: #fff;
-    box-shadow: 0 2px 14px rgba(42, 29, 36, 0.06);
+    background: #fffaf7;
+    box-shadow: 0 2px 14px rgba(59, 39, 36, 0.05);
 }
 
 .navbar {
@@ -75,7 +79,7 @@ header {
     justify-content: space-between;
     align-items: center;
     padding: 14px var(--gutter);
-    background: #fff;
+    background: #fffaf7;
 }
 
 .logo {
@@ -121,7 +125,7 @@ header {
 
 .nav-links a:hover,
 .nav-links a.active {
-    color: var(--rose);
+    color: var(--rose-deep);
 }
 
 .nav-links a:hover::after,
@@ -149,26 +153,26 @@ header {
 
 .login-btn {
     color: var(--ink);
-    background: #fff;
-    border: 1.5px solid #e6d7dd;
+    background: #fffaf7;
+    border: 1.5px solid var(--rose);
 }
 
 .login-btn:hover {
-    color: var(--rose);
-    border-color: var(--rose);
-    background: var(--bg-tint);
+    color: var(--rose-deep);
+    border-color: var(--rose-deep);
+    background: var(--bg-soft);
 }
 
 .signup-btn,
 .primary-btn {
-    background: var(--rose);
+    background: var(--rose-deep);
     color: #fff;
-    border: 1.5px solid var(--rose);
+    border: 1.5px solid var(--rose-deep);
 }
 
 .signup-btn:hover {
-    background: var(--rose-deep);
-    border-color: var(--rose-deep);
+    background: var(--rose-darker);
+    border-color: var(--rose-darker);
     box-shadow: var(--shadow);
 }
 
@@ -181,9 +185,10 @@ header {
     min-height: 580px;
     padding: 70px var(--gutter);
     overflow: hidden;
+
     background:
-        radial-gradient(circle at 20% 30%, #ffe3ee 0%, transparent 55%),
-        linear-gradient(110deg, #fff0f5 0%, #fde1ec 55%, #f9cfe0 100%);
+        radial-gradient(circle at 20% 30%, #f8e8df 0%, transparent 55%),
+        linear-gradient(110deg, #f7eeea 0%, #ead5cb 55%, #d9b7a8 100%);
 }
 
 .hero-content {
@@ -197,7 +202,7 @@ header {
     display: inline-flex;
     align-items: center;
     gap: 12px;
-    color: var(--rose);
+    color: var(--rose-deep);
     font-size: 14px;
     font-weight: 600;
     letter-spacing: 0.06em;
@@ -208,7 +213,7 @@ header {
     content: "";
     width: 32px;
     height: 2px;
-    background: var(--rose);
+    background: var(--rose-deep);
 }
 
 .hero h1 {
@@ -217,16 +222,16 @@ header {
     font-weight: 700;
     line-height: 1.12;
     letter-spacing: -0.015em;
-    color: #1f1519;
+    color: #3b2724;
     margin-bottom: 22px;
 }
 
 .hero h1 span {
-    color: var(--rose);
+    color: var(--rose-deep);
 }
 
 .hero-description {
-    color: #4a3a42;
+    color: #5c4842;
     font-size: 17px;
     line-height: 1.75;
     margin-bottom: 34px;
@@ -239,19 +244,20 @@ header {
     border-radius: var(--radius-btn);
     font-weight: 600;
     text-decoration: none;
-    box-shadow: 0 8px 20px rgba(240, 85, 143, 0.32);
+    box-shadow: 0 8px 20px rgba(166, 90, 86, 0.22);
     transition: background .2s var(--ease),
                 transform .2s var(--ease),
                 box-shadow .2s var(--ease);
 }
 
 .primary-btn:hover {
-    background: var(--rose-deep);
+    background: var(--rose-darker);
     transform: translateY(-2px);
-    box-shadow: 0 12px 26px rgba(240, 85, 143, 0.38);
+    box-shadow: 0 12px 26px rgba(140, 72, 69, 0.25);
 }
 
-/* Full-bleed cake photo on the right, fading softly into the pink background */
+/* HERO IMAGE */
+
 .hero-image {
     position: absolute;
     top: 0;
@@ -272,17 +278,41 @@ header {
     object-position: center;
     border-radius: 0;
     box-shadow: none;
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,.55) 22%, #000 48%);
-    mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,.55) 22%, #000 48%);
+
+    -webkit-mask-image: linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(0, 0, 0, .55) 22%,
+        #000 48%
+    );
+
+    mask-image: linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(0, 0, 0, .55) 22%,
+        #000 48%
+    );
 }
 
-/* soft pink tint over the photo so it blends with the theme */
+/* Warm overlay to blend image with the theme */
+
 .hero-image::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(to right, rgba(253, 225, 236, .85) 0%, rgba(253, 225, 236, 0) 55%),
-                linear-gradient(to top, rgba(240, 85, 143, .12), transparent 40%);
+
+    background:
+        linear-gradient(
+            to right,
+            rgba(247, 238, 234, .85) 0%,
+            rgba(247, 238, 234, 0) 55%
+        ),
+        linear-gradient(
+            to top,
+            rgba(166, 90, 86, .10),
+            transparent 40%
+        );
+
     pointer-events: none;
 }
 
@@ -290,6 +320,7 @@ header {
 
 .cakes-section {
     padding: 96px var(--gutter);
+    background: var(--bg);
 }
 
 .section-heading {
@@ -299,7 +330,7 @@ header {
 }
 
 .section-heading > p {
-    color: var(--rose);
+    color: var(--rose-deep);
     font-size: 14px;
     letter-spacing: 0.06em;
     font-weight: 600;
@@ -315,7 +346,8 @@ header {
     margin: 10px 0 14px;
 }
 
-/* pink underline accent under section titles */
+/* Section title accent */
+
 .section-heading h2 {
     position: relative;
     display: inline-block;
@@ -340,6 +372,8 @@ header {
     font-size: 16px;
 }
 
+/* Cake grid */
+
 .cake-container {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -354,6 +388,7 @@ header {
     border-radius: var(--radius);
     overflow: hidden;
     box-shadow: var(--shadow);
+
     transition: transform .3s var(--ease),
                 box-shadow .3s var(--ease);
 }
@@ -386,6 +421,7 @@ header {
     font-family: var(--font-display);
     font-size: 22px;
     font-weight: 700;
+    color: var(--ink);
     margin-bottom: 8px;
 }
 
@@ -397,23 +433,25 @@ header {
     margin-bottom: 20px;
 }
 
-/* "Customize Cake" now a pink button like "Add to Cart" in the reference */
+/* Cake buttons */
+
 .cake-info a {
     display: block;
     text-align: center;
-    background: var(--rose);
+    background: var(--rose-deep);
     color: #fff;
     text-decoration: none;
     font-size: 14px;
     font-weight: 600;
     padding: 12px 18px;
     border-radius: var(--radius-btn);
+
     transition: background .2s var(--ease),
                 box-shadow .2s var(--ease);
 }
 
 .cake-info a:hover {
-    background: var(--rose-deep);
+    background: var(--rose-darker);
     box-shadow: var(--shadow);
 }
 
@@ -421,7 +459,12 @@ header {
 
 .how-section {
     padding: 96px var(--gutter);
-    background: linear-gradient(180deg, var(--bg-tint), var(--bg-soft));
+
+    background: linear-gradient(
+        180deg,
+        #fffaf7,
+        #f7eeea
+    );
 }
 
 .how-section .section-heading {
@@ -435,18 +478,20 @@ header {
     align-items: stretch;
 }
 
-/* Step Cards */
+/* Step cards */
 
 .step {
     max-width: none;
     margin: 0;
     padding: 32px 26px;
     text-align: center;
+
     background: var(--surface);
     border: 1px solid var(--line);
-    border-top: 4px solid var(--rose);
+    border-top: 4px solid var(--rose-deep);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
+
     transition: transform .3s var(--ease),
                 box-shadow .3s var(--ease);
 }
@@ -456,18 +501,22 @@ header {
     box-shadow: var(--shadow-lift);
 }
 
-/* Number Circles - 01, 02, 03 kept */
+/* Number circles */
 
 .step h3 {
     display: grid;
     place-items: center;
+
     width: 68px;
     height: 68px;
+
     margin: 0 auto 20px;
+
     font-family: var(--font-display);
     font-size: 28px;
     font-weight: 700;
-    color: var(--rose);
+
+    color: var(--rose-deep);
     background: var(--bg-soft);
     border: 1.5px solid var(--rose);
     border-radius: 50%;
@@ -477,6 +526,7 @@ header {
     font-family: var(--font-display);
     font-size: 19px;
     font-weight: 700;
+    color: var(--ink);
     margin-bottom: 10px;
 }
 
@@ -493,13 +543,14 @@ header {
     background: #fff;
 }
 
-/* Custom Cake Image Upload Information */
+/* Custom cake design information */
 
 .step-design-note {
     text-align: left;
     padding: 15px;
     margin-top: 20px;
-    background: var(--bg-tint);
+
+    background: var(--bg-soft);
     border-radius: 12px;
     border: 1.5px dashed var(--rose);
 }
@@ -522,16 +573,26 @@ header {
 .about-section {
     padding: 100px var(--gutter);
     text-align: center;
+    background: var(--bg);
 }
 
 .about-section > div {
     max-width: 720px;
     margin: auto;
     padding: 56px 44px;
-    background: var(--bg-tint);
+
+    background: var(--bg-soft);
     border: 1px solid var(--line);
     border-radius: 24px;
     box-shadow: var(--shadow);
+}
+
+.about-section .subtitle {
+    color: var(--rose-deep);
+}
+
+.about-section h2 {
+    color: var(--ink);
 }
 
 .about-section p:last-child {
@@ -554,7 +615,7 @@ footer h2 {
     font-family: var(--font-display);
     font-size: 28px;
     font-weight: 800;
-    color: var(--rose);
+    color: var(--rose-deep);
     margin-bottom: 8px;
 }
 
@@ -575,7 +636,9 @@ footer a {
     margin: 28px auto;
     padding: 24px 28px;
     text-align: left;
+
     background: #fff;
+    border: 1px solid var(--line);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
 }
@@ -583,6 +646,7 @@ footer a {
 .contact-details h3 {
     font-family: var(--font-display);
     font-size: 20px;
+    color: var(--ink);
     margin-bottom: 14px;
     padding-bottom: 10px;
     border-bottom: 2px solid var(--bg-soft);
@@ -592,7 +656,8 @@ footer a {
     color: var(--ink);
 }
 
-/* copyright line */
+/* Copyright */
+
 footer > p:last-child {
     max-width: 1100px;
     margin: 0 auto;
@@ -622,6 +687,8 @@ footer > p:last-child {
     }
 }
 
+/* Tablet and mobile */
+
 @media (max-width: 768px) {
 
     .navbar {
@@ -638,6 +705,12 @@ footer > p:last-child {
         gap: 22px;
         flex-wrap: wrap;
     }
+
+    .nav-buttons {
+        justify-content: center;
+    }
+
+    /* Hero */
 
     .hero {
         flex-direction: column-reverse;
@@ -662,13 +735,24 @@ footer > p:last-child {
     }
 
     .hero-image img {
-        -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
-        mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+        -webkit-mask-image: linear-gradient(
+            to bottom,
+            #000 55%,
+            transparent 100%
+        );
+
+        mask-image: linear-gradient(
+            to bottom,
+            #000 55%,
+            transparent 100%
+        );
     }
 
     .hero-image::after {
         background: none;
     }
+
+    /* Sections */
 
     .cakes-section,
     .how-section {
@@ -683,6 +767,8 @@ footer > p:last-child {
     .step {
         padding: 28px 22px;
     }
+
+    /* About */
 
     .about-section {
         padding: 64px 6%;

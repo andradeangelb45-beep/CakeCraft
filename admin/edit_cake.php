@@ -21,7 +21,8 @@ $allowed_categories = [
     "Wedding Cake",
     "Christening Cake",
     "Cupcakes",
-    "Bento Cake"
+    "Bento Cake",
+    "All-Occasion Cakes"
 ];
 
 $regular_options = [];

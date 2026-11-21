@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 require_once "../database.php";
@@ -17,7 +16,7 @@ if (!in_array($filter, $allowed_statuses, true)) {
 }
 
 /* ==========================================
-   HELPER: PRESERVE SEARCH AND FILTER
+   HELPER FUNCTIONS
 ========================================== */
 
 function order_return_url($filter, $search, $anchor = "") {
@@ -44,33 +43,97 @@ function order_return_url($filter, $search, $anchor = "") {
     return $url;
 }
 
+/* Normalize delivery method values */
+function normalize_delivery_method($value) {
+    $value = strtolower(trim((string)$value));
+
+    if ($value === "pickup" || $value === "pick-up" || $value === "pick up") {
+        return "Pick-up";
+    }
+
+    if ($value === "delivery") {
+        return "Delivery";
+    }
+
+    return "Delivery";
+}
+
 /* ==========================================
-   UPDATE REGULAR ORDER STATUS
+   UPDATE REGULAR ORDER STATUS + DELIVERY FEE
 ========================================== */
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_status"])) {
 
     $order_id = (int)($_POST["order_id"] ?? 0);
     $status = $_POST["order_status"] ?? "";
+    $delivery_fee_raw = trim($_POST["delivery_fee"] ?? "");
+
+    $fee_error = false;
 
     if ($order_id > 0 && in_array($status, $allowed_statuses, true)) {
 
-        $stmt = $conn->prepare("
-            UPDATE orders
-            SET order_status = ?
+        // Retrieve existing order information before saving.
+        $get_order = $conn->prepare("
+            SELECT delivery_method, delivery_fee, order_status
+            FROM orders
             WHERE id = ?
-            AND order_status <> 'Cancelled'
         ");
+        $get_order->bind_param("i", $order_id);
+        $get_order->execute();
+        $existing_order = $get_order->get_result()->fetch_assoc();
+        $get_order->close();
 
-        $stmt->bind_param("si", $status, $order_id);
-        $stmt->execute();
-        $stmt->close();
+        if ($existing_order && $existing_order["order_status"] !== "Cancelled") {
+
+            $method = normalize_delivery_method($existing_order["delivery_method"] ?? "Delivery");
+            $fee_to_save = null;
+
+            if ($method === "Pick-up") {
+                // Pick-up orders always have no delivery fee.
+                $fee_to_save = 0.00;
+            } else {
+                if ($delivery_fee_raw !== "") {
+                    if (is_numeric($delivery_fee_raw) && (float)$delivery_fee_raw >= 0) {
+                        $fee_to_save = (float)$delivery_fee_raw;
+                    } else {
+                        $fee_error = true;
+                    }
+                } else {
+                    // Keep the previously saved fee if the admin leaves the field blank.
+                    $fee_to_save = $existing_order["delivery_fee"] !== null
+                        ? (float)$existing_order["delivery_fee"]
+                        : null;
+                }
+
+                // A Delivery order cannot be Approved until a fee is provided.
+                if ($status === "Approved" && $fee_to_save === null) {
+                    $fee_error = true;
+                }
+            }
+
+            if (!$fee_error) {
+                $stmt = $conn->prepare("
+                    UPDATE orders
+                    SET order_status = ?, delivery_fee = ?
+                    WHERE id = ?
+                    AND order_status <> 'Cancelled'
+                ");
+                $stmt->bind_param("sdi", $status, $fee_to_save, $order_id);
+                $stmt->execute();
+                $stmt->close();
+            }
+        }
     }
 
     $return_filter = $_POST["filter"] ?? "";
     $return_search = trim($_POST["search"] ?? "");
+    $return_url = order_return_url($return_filter, $return_search);
 
-    header("Location: " . order_return_url($return_filter, $return_search));
+    if ($fee_error) {
+        $return_url .= (strpos($return_url, "?") === false ? "?" : "&") . "fee_error=1";
+    }
+
+    header("Location: " . $return_url);
     exit();
 }
 
@@ -101,7 +164,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_custom_request
         $valid_quote
     ) {
 
-        // Approval requires a valid quotation.
         if ($request_status !== "Approved" || ($quote !== null && $quote > 0)) {
 
             $stmt = $conn->prepare("
@@ -126,7 +188,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_custom_request
 
 /* ==========================================
    COMBINED ORDER COUNTS
-   REGULAR + CUSTOMIZED
 ========================================== */
 
 $counts = array_fill_keys($allowed_statuses, 0);
@@ -247,7 +308,6 @@ if (!empty($params)) {
 
 /* ==========================================
    CUSTOM CAKE REQUESTS QUERY
-   FILTER AND SEARCH INCLUDED
 ========================================== */
 
 $custom_conditions = [];
@@ -557,6 +617,26 @@ button:hover {
     letter-spacing: .02em;
 }
 
+/* DELIVERY METHOD BADGES */
+
+.delivery-method {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.delivery-method.delivery {
+    background: #fce8e5;
+    color: #a65a56;
+}
+
+.delivery-method.pickup {
+    background: #e8f3e8;
+    color: #387345;
+}
+
 /* CARDS */
 
 .card {
@@ -683,6 +763,27 @@ button:hover {
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
+}
+
+.money-summary {
+    min-width: 220px;
+}
+
+.money-summary small {
+    margin-top: 5px;
+}
+
+.money-summary strong {
+    display: block;
+    font-size: 20px;
+}
+
+.money-summary strong:last-child {
+    font-size: 26px;
+}
+
+.status-form input[type="number"] {
+    width: 135px;
 }
 
 .status-form label {
@@ -905,7 +1006,7 @@ input[type=number] {
 <h1>Manage Customer Orders</h1>
 
 <p class="subtitle">
-    View and manage regular orders and customized cake requests in CakeCraft.
+    View and manage regular orders and customized cake requests in CakeCraft. Set delivery fees before approving Delivery orders.
 </p>
 
 <!-- SEARCH -->
@@ -982,6 +1083,12 @@ $all_url = "orders.php" . ($all_params ? "?" . http_build_query($all_params) : "
 
 </nav>
 
+<?php if (isset($_GET["fee_error"])): ?>
+    <div class="empty" style="border-style:solid; margin-bottom:20px; color:#9b1c1c;">
+        Please enter a valid delivery fee (₱0.00 or higher) before approving a Delivery order.
+    </div>
+<?php endif; ?>
+
 <!-- ==========================================
      REGULAR CAKE ORDERS
 ========================================== -->
@@ -1003,6 +1110,23 @@ $all_url = "orders.php" . ($all_params ? "?" . http_build_query($all_params) : "
         ["pending", "approved", "completed", "cancelled"],
         true
     ) ? $status_key : "pending";
+
+    /* Normalize delivery method */
+    $delivery_method = normalize_delivery_method(
+        $order["delivery_method"] ?? "Delivery"
+    );
+
+    $delivery_class = $delivery_method === "Pick-up"
+        ? "pickup"
+        : "delivery";
+
+    $cake_subtotal = (float)($order["total_price"] ?? 0);
+    $saved_delivery_fee = $delivery_method === "Pick-up"
+        ? 0.00
+        : ($order["delivery_fee"] !== null ? (float)$order["delivery_fee"] : null);
+    $grand_total = $saved_delivery_fee !== null
+        ? $cake_subtotal + $saved_delivery_fee
+        : null;
 
 ?>
 
@@ -1071,10 +1195,35 @@ $all_url = "orders.php" . ($all_params ? "?" . http_build_query($all_params) : "
             </p>
         </div>
 
-        <div class="span2">
-            <p class="label">Delivery address</p>
+        <!-- DELIVERY METHOD -->
+        <div>
+            <p class="label">Delivery method</p>
+
             <p class="value">
-                <?php echo nl2br(htmlspecialchars($order["delivery_address"])); ?>
+                <span class="delivery-method <?php echo $delivery_class; ?>">
+                    <?php echo htmlspecialchars($delivery_method); ?>
+                </span>
+            </p>
+        </div>
+
+        <!-- DELIVERY ADDRESS -->
+        <div class="span2">
+            <p class="label">
+                <?php echo $delivery_method === "Delivery"
+                    ? "Delivery address"
+                    : "Address"; ?>
+            </p>
+
+            <p class="value">
+                <?php
+                if ($delivery_method === "Delivery") {
+                    echo !empty($order["delivery_address"])
+                        ? nl2br(htmlspecialchars($order["delivery_address"]))
+                        : "No delivery address provided.";
+                } else {
+                    echo "No delivery address required — Customer will pick up the order.";
+                }
+                ?>
             </p>
         </div>
 
@@ -1100,10 +1249,16 @@ $all_url = "orders.php" . ($all_params ? "?" . http_build_query($all_params) : "
 
     <div class="footer">
 
-        <div class="price">
-            <small>Total price</small>
+        <div class="price money-summary">
+            <small>Cake subtotal</small>
+            <strong>₱<?php echo number_format($cake_subtotal, 2); ?></strong>
+            <small>Delivery fee</small>
+            <strong class="money-line">
+                <?php echo $saved_delivery_fee !== null ? "₱" . number_format($saved_delivery_fee, 2) : "Not set yet"; ?>
+            </strong>
+            <small>Grand total</small>
             <strong>
-                ₱<?php echo number_format((float)$order["total_price"], 2); ?>
+                <?php echo $grand_total !== null ? "₱" . number_format($grand_total, 2) : "Waiting for delivery fee"; ?>
             </strong>
         </div>
 
@@ -1125,6 +1280,22 @@ $all_url = "orders.php" . ($all_params ? "?" . http_build_query($all_params) : "
 
             <input type="hidden" name="search"
                    value="<?php echo htmlspecialchars($search); ?>">
+
+            <?php if ($delivery_method === "Delivery"): ?>
+                <label for="fee-<?php echo (int)$order["id"]; ?>">Delivery fee (₱)</label>
+                <input
+                    type="number"
+                    name="delivery_fee"
+                    id="fee-<?php echo (int)$order["id"]; ?>"
+                    min="0"
+                    step="0.01"
+                    placeholder="Enter fee"
+                    value="<?php echo $order["delivery_fee"] !== null ? htmlspecialchars((string)$order["delivery_fee"]) : ""; ?>"
+                >
+            <?php else: ?>
+                <input type="hidden" name="delivery_fee" value="0">
+                <span class="label">Pick-up delivery fee: ₱0.00</span>
+            <?php endif; ?>
 
             <label for="status-<?php echo (int)$order["id"]; ?>">
                 Update status
@@ -1204,6 +1375,15 @@ $all_url = "orders.php" . ($all_params ? "?" . http_build_query($all_params) : "
     $image_name = basename((string)($request["design_image"] ?? ""));
     $image_path = "../assets/images/custom_requests/" . $image_name;
 
+    /* Normalize custom request delivery method */
+    $custom_delivery_method = normalize_delivery_method(
+        $request["delivery_method"] ?? "Delivery"
+    );
+
+    $custom_delivery_class = $custom_delivery_method === "Pick-up"
+        ? "pickup"
+        : "delivery";
+
 ?>
 
 <div class="card">
@@ -1238,15 +1418,18 @@ $all_url = "orders.php" . ($all_params ? "?" . http_build_query($all_params) : "
             <p class="label">Submitted design</p>
 
             <?php if ($image_name !== ""): ?>
+
                 <a class="design-frame"
                    href="<?php echo htmlspecialchars($image_path); ?>"
                    target="_blank" rel="noopener"
                    aria-label="View submitted cake design in full size">
+
                     <img
                         class="design"
                         src="<?php echo htmlspecialchars($image_path); ?>"
                         alt="Customer's cake design"
                     >
+
                 </a>
 
                 <a class="design-link"
@@ -1254,114 +1437,122 @@ $all_url = "orders.php" . ($all_params ? "?" . http_build_query($all_params) : "
                    target="_blank" rel="noopener">
                     View full image
                 </a>
+
             <?php else: ?>
+
                 <div class="design-frame">
                     <p class="value">No design image uploaded.</p>
                 </div>
+
             <?php endif; ?>
+
         </div>
 
         <div class="details custom-details">
 
-        <!-- CUSTOMER NAME -->
+            <div>
+                <p class="label">Customer name</p>
+                <p class="value">
+                    <?php echo htmlspecialchars($request["full_name"] ?? "Unavailable"); ?>
+                </p>
+            </div>
 
-        <div>
-            <p class="label">Customer name</p>
+            <div>
+                <p class="label">Contact number</p>
+                <p class="value">
+                    <?php echo htmlspecialchars($request["phone"] ?? "Unavailable"); ?>
+                </p>
+            </div>
 
-            <p class="value">
-                <?php echo htmlspecialchars($request["full_name"] ?? "Unavailable"); ?>
-            </p>
+            <div>
+                <p class="label">Customer email</p>
+                <p class="value">
+                    <?php echo htmlspecialchars($request["email"] ?? "Unavailable"); ?>
+                </p>
+            </div>
+
+            <div>
+                <p class="label">Cake size</p>
+                <p class="value">
+                    <?php echo htmlspecialchars($request["cake_size"] ?? "Not specified"); ?>
+                </p>
+            </div>
+
+            <div>
+                <p class="label">Flavor</p>
+                <p class="value">
+                    <?php echo htmlspecialchars($request["flavor"] ?? "Not specified"); ?>
+                </p>
+            </div>
+
+            <div>
+                <p class="label">Color</p>
+                <p class="value">
+                    <?php echo htmlspecialchars($request["color"] ?? "Not specified"); ?>
+                </p>
+            </div>
+
+            <div>
+                <p class="label">Quantity</p>
+                <p class="value">
+                    <?php echo (int)$request["quantity"]; ?>
+                </p>
+            </div>
+
+            <div>
+                <p class="label">Preferred date</p>
+                <p class="value">
+                    <?php
+                    echo !empty($request["preferred_date"])
+                        ? date("M d, Y", strtotime($request["preferred_date"]))
+                        : "Not specified";
+                    ?>
+                </p>
+            </div>
+
+            <!-- CUSTOM DELIVERY METHOD -->
+            <div>
+                <p class="label">Delivery method</p>
+
+                <p class="value">
+                    <span class="delivery-method <?php echo $custom_delivery_class; ?>">
+                        <?php echo htmlspecialchars($custom_delivery_method); ?>
+                    </span>
+                </p>
+            </div>
+
+            <!-- CUSTOM DELIVERY ADDRESS -->
+            <div class="span2">
+                <p class="label">
+                    <?php echo $custom_delivery_method === "Delivery"
+                        ? "Delivery address"
+                        : "Address"; ?>
+                </p>
+
+                <p class="value">
+                    <?php
+                    if ($custom_delivery_method === "Delivery") {
+                        echo !empty($request["delivery_address"])
+                            ? nl2br(htmlspecialchars($request["delivery_address"]))
+                            : "No delivery address provided.";
+                    } else {
+                        echo "No delivery address required — Customer will pick up the order.";
+                    }
+                    ?>
+                </p>
+            </div>
+
+            <div class="span3">
+                <p class="label">Special instructions</p>
+
+                <p class="value">
+                    <?php echo nl2br(htmlspecialchars($request["special_instructions"] ?? "None")); ?>
+                </p>
+            </div>
+
         </div>
 
-        <!-- CUSTOMER PHONE -->
-
-        <div>
-            <p class="label">Contact number</p>
-
-            <p class="value">
-                <?php echo htmlspecialchars($request["phone"] ?? "Unavailable"); ?>
-            </p>
-        </div>
-
-        <!-- CUSTOMER EMAIL -->
-
-        <div>
-            <p class="label">Customer email</p>
-
-            <p class="value">
-                <?php echo htmlspecialchars($request["email"] ?? "Unavailable"); ?>
-            </p>
-        </div>
-
-        <!-- CAKE DETAILS -->
-
-        <div>
-            <p class="label">Cake size</p>
-
-            <p class="value">
-                <?php echo htmlspecialchars($request["cake_size"] ?? "Not specified"); ?>
-            </p>
-        </div>
-
-        <div>
-            <p class="label">Flavor</p>
-
-            <p class="value">
-                <?php echo htmlspecialchars($request["flavor"] ?? "Not specified"); ?>
-            </p>
-        </div>
-
-        <div>
-            <p class="label">Color</p>
-
-            <p class="value">
-                <?php echo htmlspecialchars($request["color"] ?? "Not specified"); ?>
-            </p>
-        </div>
-
-        <div>
-            <p class="label">Quantity</p>
-
-            <p class="value">
-                <?php echo (int)$request["quantity"]; ?>
-            </p>
-        </div>
-
-        <div>
-            <p class="label">Preferred date</p>
-
-            <p class="value">
-                <?php
-                echo !empty($request["preferred_date"])
-                    ? date("M d, Y", strtotime($request["preferred_date"]))
-                    : "Not specified";
-                ?>
-            </p>
-        </div>
-
-        <!-- ADDRESS -->
-
-        <div class="span2">
-            <p class="label">Delivery address</p>
-
-            <p class="value">
-                <?php echo nl2br(htmlspecialchars($request["delivery_address"] ?? "Not specified")); ?>
-            </p>
-        </div>
-
-        <!-- INSTRUCTIONS -->
-
-        <div class="span3">
-            <p class="label">Special instructions</p>
-
-            <p class="value">
-                <?php echo nl2br(htmlspecialchars($request["special_instructions"] ?? "None")); ?>
-            </p>
-        </div>
-
-        </div><!-- /.details.custom-details -->
-
-    </div><!-- /.custom-request-content -->
+    </div>
 
     <!-- QUOTATION AND STATUS -->
 

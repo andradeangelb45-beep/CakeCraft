@@ -2,7 +2,7 @@
 <?php
 require_once "database.php";
 
-// Get updated admin contact details from site_contact table
+// Get updated admin contact details
 $admin_query = $conn->query(
     "SELECT contact_name, email, contact_number
      FROM site_contact
@@ -11,6 +11,65 @@ $admin_query = $conn->query(
 );
 
 $admin = $admin_query ? $admin_query->fetch_assoc() : null;
+
+
+// ==========================================
+// GET LATEST UPLOADED CAKE IMAGE PER CATEGORY
+// ==========================================
+
+$categories = [
+    "Birthday Cake",
+    "Wedding Cake",
+    "Christening Cake",
+    "Cupcakes",
+    "Bento Cake",
+    "All-Occasion Cakes"
+];
+
+$category_images = [];
+
+// Initialize categories
+foreach ($categories as $category) {
+    $category_images[$category] = "";
+}
+
+// Get cakes from newest to oldest
+$cakes_query = $conn->query(
+    "SELECT category, image
+     FROM cake_options
+     ORDER BY id DESC"
+);
+
+if ($cakes_query) {
+
+    while ($cake = $cakes_query->fetch_assoc()) {
+
+        $category = trim($cake["category"] ?? "");
+        $image = trim($cake["image"] ?? "");
+
+        // Only use categories listed above
+        // Only use the newest cake with an image per category
+        if (
+            isset($category_images[$category]) &&
+            $category_images[$category] === "" &&
+            $image !== ""
+        ) {
+
+            $category_images[$category] =
+                "assets/images/" . basename($image);
+        }
+    }
+}
+
+
+// ==========================================
+// CATEGORY LOGIN LINKS
+// ==========================================
+
+function categoryLoginLink($category) {
+    return "customer/login.php?redirect=cakes.php&category=" .
+        urlencode($category);
+}
 ?>
 
 <!DOCTYPE html>
@@ -21,12 +80,262 @@ $admin = $admin_query ? $admin_query->fetch_assoc() : null;
 
     <title>CakeCraft | Custom Cakes Made With Love</title>
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=12">
+
+    <style>
+        :root {
+            --bg: #fffaf7;
+            --bg-soft: #f7eeea;
+            --bg-tint: #f4e5df;
+            --ink: #3b2724;
+            --ink-soft: #6f5d57;
+            --rose: #c47c78;
+            --rose-deep: #a65a56;
+            --rose-darker: #8c4845;
+            --line: #efe0da;
+        }
+
+        body {
+            background: #fffaf7 !important;
+            color: #3b2724 !important;
+        }
+
+        header,
+        .navbar {
+            background: #fffaf7 !important;
+        }
+
+        .hero {
+            background: #f7eeea !important;
+        }
+
+        .about-section {
+            background: #f7eeea !important;
+        }
+
+        .how-section {
+            background: #fffaf7 !important;
+        }
+
+        footer {
+            background: #f4e5df !important;
+            color: #3b2724 !important;
+        }
+
+        .primary-btn,
+        .signup-btn {
+            background: #c47c78 !important;
+            color: #ffffff !important;
+        }
+
+        .primary-btn:hover,
+        .signup-btn:hover {
+            background: #a65a56 !important;
+        }
+
+        .login-btn {
+            border-color: #efe0da !important;
+            color: #3b2724 !important;
+        }
+
+        .login-btn:hover {
+            background: #f7eeea !important;
+        }
+
+        /* Cake Categories */
+
+        .cakes-section {
+            padding: 85px 8%;
+            background: #fffaf7 !important;
+        }
+
+        .cakes-section .section-heading {
+            margin-bottom: 45px;
+        }
+
+        .cakes-section .section-heading > p {
+            color: #a65a56 !important;
+            letter-spacing: 3px;
+            font-weight: 600;
+        }
+
+        .cakes-section .section-heading h2 {
+            color: #3b2724 !important;
+        }
+
+        .cakes-section .section-heading span {
+            color: #6f5d57 !important;
+        }
+
+        .cake-container {
+            display: grid !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 28px !important;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .cake-card {
+            background: #ffffff !important;
+            border: 1px solid #efe0da !important;
+            border-radius: 16px !important;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(74, 45, 36, 0.04);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .cake-card:hover {
+            transform: translateY(-7px);
+            box-shadow: 0 14px 30px rgba(74, 45, 36, 0.10);
+        }
+
+        /* Category image */
+
+        .cake-card img {
+            display: block;
+            width: 100%;
+            height: 250px !important;
+            object-fit: cover;
+            object-position: center;
+            transition: transform 0.4s ease;
+        }
+
+        .cake-card:hover img {
+            transform: scale(1.04);
+        }
+
+        /* Fallback when no image is uploaded */
+
+        .category-image-placeholder {
+            width: 100%;
+            height: 250px;
+            background: #f7eeea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 25px;
+            color: #a65a56;
+            font-size: 14px;
+        }
+
+        .cake-info {
+            padding: 24px !important;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cake-info h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 23px;
+            color: #3b2724 !important;
+            margin: 0 0 10px;
+        }
+
+        .cake-info p {
+            color: #6f5d57 !important;
+            font-size: 14px;
+            line-height: 1.7;
+            min-height: 48px;
+            margin-bottom: 20px;
+        }
+
+        .cake-info a {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: #c47c78 !important;
+            color: #ffffff !important;
+            text-decoration: none !important;
+            padding: 13px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.25s ease, transform 0.25s ease;
+        }
+
+        .cake-info a:hover {
+            background: #a65a56 !important;
+            transform: translateY(-2px);
+        }
+
+        .cake-info a span {
+            transition: transform 0.25s ease;
+        }
+
+        .cake-info a:hover span {
+            transform: translateX(4px);
+        }
+
+        .step {
+            background: #ffffff;
+            border: 1px solid #efe0da;
+            border-radius: 16px;
+        }
+
+        .step h3 {
+            color: #c47c78 !important;
+        }
+
+        .step-design-note {
+            background: #f7eeea !important;
+            border-radius: 10px;
+        }
+
+        /* Tablet */
+
+        @media (max-width: 950px) {
+            .cake-container {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 22px !important;
+            }
+
+            .cake-card img,
+            .category-image-placeholder {
+                height: 230px !important;
+            }
+        }
+
+        /* Mobile */
+
+        @media (max-width: 600px) {
+            .cakes-section {
+                padding: 60px 5%;
+            }
+
+            .cakes-section .section-heading {
+                margin-bottom: 30px;
+            }
+
+            .cake-container {
+                grid-template-columns: 1fr !important;
+                gap: 22px !important;
+            }
+
+            .cake-card img,
+            .category-image-placeholder {
+                height: 240px !important;
+            }
+
+            .cake-info {
+                padding: 20px !important;
+            }
+
+            .cake-info h3 {
+                font-size: 21px;
+            }
+
+            .cake-info p {
+                min-height: unset;
+            }
+        }
+    </style>
 </head>
+
 <body>
 
-    <!-- Navigation Bar -->
+    <!-- Navigation -->
     <header>
         <nav class="navbar">
 
@@ -79,8 +388,8 @@ $admin = $admin_query ? $admin_query->fetch_assoc() : null;
         <div class="hero-image">
 
             <img
-                src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=900"
-                alt="Beautiful decorated birthday cake"
+                src="assets/images/Elegant Blush Bakery Dessert Spread.png"
+                alt="Beautiful decorated cakes and desserts"
             >
 
         </div>
@@ -88,41 +397,53 @@ $admin = $admin_query ? $admin_query->fetch_assoc() : null;
     </section>
 
 
-    <!-- Featured Cakes -->
+    <!-- Cake Categories -->
     <section class="cakes-section" id="cakes">
 
         <div class="section-heading">
 
             <p>OUR COLLECTION</p>
 
-            <h2>Explore Our Cakes</h2>
+            <h2>Explore Our Cake Collections</h2>
 
             <span>
-                Discover delicious cakes for every special occasion.
+                Find the perfect cake for every celebration and special moment.
             </span>
 
         </div>
 
         <div class="cake-container">
 
-            <!-- Chocolate Cake -->
+
+            <!-- Birthday Cakes -->
             <div class="cake-card">
 
-                <img
-                    src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600"
-                    alt="Chocolate cake"
-                >
+                <?php if (!empty($category_images["Birthday Cake"])): ?>
+
+                    <img
+                        src="<?php echo htmlspecialchars($category_images["Birthday Cake"]); ?>"
+                        alt="Latest Birthday Cake uploaded by admin"
+                        loading="lazy"
+                    >
+
+                <?php else: ?>
+
+                    <div class="category-image-placeholder">
+                        No Birthday Cake image uploaded yet.
+                    </div>
+
+                <?php endif; ?>
 
                 <div class="cake-info">
 
-                    <h3>Chocolate Cake</h3>
+                    <h3>Birthday Cakes</h3>
 
                     <p>
-                        Rich and delicious chocolate goodness.
+                        Make birthdays extra special with cakes made for celebrating.
                     </p>
 
-                    <a href="customer/login.php">
-                        Customize Cake
+                    <a href="<?php echo htmlspecialchars(categoryLoginLink("Birthday Cake")); ?>">
+                        Explore Collection <span>→</span>
                     </a>
 
                 </div>
@@ -130,24 +451,35 @@ $admin = $admin_query ? $admin_query->fetch_assoc() : null;
             </div>
 
 
-            <!-- Strawberry Cake -->
+            <!-- Wedding Cakes -->
             <div class="cake-card">
 
-                <img
-                    src="https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=600"
-                    alt="Strawberry cake"
-                >
+                <?php if (!empty($category_images["Wedding Cake"])): ?>
+
+                    <img
+                        src="<?php echo htmlspecialchars($category_images["Wedding Cake"]); ?>"
+                        alt="Latest Wedding Cake uploaded by admin"
+                        loading="lazy"
+                    >
+
+                <?php else: ?>
+
+                    <div class="category-image-placeholder">
+                        No Wedding Cake image uploaded yet.
+                    </div>
+
+                <?php endif; ?>
 
                 <div class="cake-info">
 
-                    <h3>Strawberry Cake</h3>
+                    <h3>Wedding Cakes</h3>
 
                     <p>
-                        Sweet strawberry flavor in every bite.
+                        Sweet beginnings deserve a beautiful cake for your big day.
                     </p>
 
-                    <a href="customer/login.php">
-                        Customize Cake
+                    <a href="<?php echo htmlspecialchars(categoryLoginLink("Wedding Cake")); ?>">
+                        Explore Collection <span>→</span>
                     </a>
 
                 </div>
@@ -155,24 +487,143 @@ $admin = $admin_query ? $admin_query->fetch_assoc() : null;
             </div>
 
 
-            <!-- Vanilla Cake -->
+            <!-- Christening Cakes -->
             <div class="cake-card">
 
-                <img
-                    src="https://images.unsplash.com/photo-1571115177098-24ec42ed204d?w=600"
-                    alt="Vanilla cake"
-                >
+                <?php if (!empty($category_images["Christening Cake"])): ?>
+
+                    <img
+                        src="<?php echo htmlspecialchars($category_images["Christening Cake"]); ?>"
+                        alt="Latest Christening Cake uploaded by admin"
+                        loading="lazy"
+                    >
+
+                <?php else: ?>
+
+                    <div class="category-image-placeholder">
+                        No Christening Cake image uploaded yet.
+                    </div>
+
+                <?php endif; ?>
 
                 <div class="cake-info">
 
-                    <h3>Vanilla Cake</h3>
+                    <h3>Christening Cakes</h3>
 
                     <p>
-                        Classic, soft, and perfectly creamy.
+                        Celebrate precious milestones with beautiful and sweet creations.
                     </p>
 
-                    <a href="customer/login.php">
-                        Customize Cake
+                    <a href="<?php echo htmlspecialchars(categoryLoginLink("Christening Cake")); ?>">
+                        Explore Collection <span>→</span>
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <!-- Cupcakes -->
+            <div class="cake-card">
+
+                <?php if (!empty($category_images["Cupcakes"])): ?>
+
+                    <img
+                        src="<?php echo htmlspecialchars($category_images["Cupcakes"]); ?>"
+                        alt="Latest Cupcakes uploaded by admin"
+                        loading="lazy"
+                    >
+
+                <?php else: ?>
+
+                    <div class="category-image-placeholder">
+                        No Cupcakes image uploaded yet.
+                    </div>
+
+                <?php endif; ?>
+
+                <div class="cake-info">
+
+                    <h3>Cupcakes</h3>
+
+                    <p>
+                        Little treats made to bring sweetness to every occasion.
+                    </p>
+
+                    <a href="<?php echo htmlspecialchars(categoryLoginLink("Cupcakes")); ?>">
+                        Explore Collection <span>→</span>
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <!-- Bento Cakes -->
+            <div class="cake-card">
+
+                <?php if (!empty($category_images["Bento Cake"])): ?>
+
+                    <img
+                        src="<?php echo htmlspecialchars($category_images["Bento Cake"]); ?>"
+                        alt="Latest Bento Cake uploaded by admin"
+                        loading="lazy"
+                    >
+
+                <?php else: ?>
+
+                    <div class="category-image-placeholder">
+                        No Bento Cake image uploaded yet.
+                    </div>
+
+                <?php endif; ?>
+
+                <div class="cake-info">
+
+                    <h3>Bento Cakes</h3>
+
+                    <p>
+                        Small cakes, sweet surprises, and cute personalized designs.
+                    </p>
+
+                    <a href="<?php echo htmlspecialchars(categoryLoginLink("Bento Cake")); ?>">
+                        Explore Collection <span>→</span>
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <!-- All-Occasion Cakes -->
+            <div class="cake-card">
+
+                <?php if (!empty($category_images["All-Occasion Cakes"])): ?>
+
+                    <img
+                        src="<?php echo htmlspecialchars($category_images["All-Occasion Cakes"]); ?>"
+                        alt="Latest All-Occasion Cake uploaded by admin"
+                        loading="lazy"
+                    >
+
+                <?php else: ?>
+
+                    <div class="category-image-placeholder">
+                        No All-Occasion Cake image uploaded yet.
+                    </div>
+
+                <?php endif; ?>
+
+                <div class="cake-info">
+
+                    <h3>All-Occasion Cakes</h3>
+
+                    <p>
+                        Delicious cakes perfect for any celebration or gathering.
+                    </p>
+
+                    <a href="<?php echo htmlspecialchars(categoryLoginLink("All-Occasion Cakes")); ?>">
+                        Explore Collection <span>→</span>
                     </a>
 
                 </div>
@@ -288,7 +739,7 @@ $admin = $admin_query ? $admin_query->fetch_assoc() : null;
     </section>
 
 
-    <!-- Footer / Contact Section -->
+    <!-- Footer / Contact -->
     <footer id="contact">
 
         <h2>CakeCraft.</h2>
@@ -303,13 +754,11 @@ $admin = $admin_query ? $admin_query->fetch_assoc() : null;
 
             <?php if ($admin): ?>
 
-                <!-- Contact Person -->
                 <p>
                     <strong>Contact Person:</strong>
                     <?php echo htmlspecialchars($admin["contact_name"]); ?>
                 </p>
 
-                <!-- Contact Email -->
                 <p>
                     <strong>Email:</strong>
 
@@ -318,7 +767,6 @@ $admin = $admin_query ? $admin_query->fetch_assoc() : null;
                     </a>
                 </p>
 
-                <!-- Contact Number -->
                 <?php if (!empty($admin["contact_number"])): ?>
 
                     <p>

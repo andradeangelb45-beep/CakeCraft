@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 require_once "../database.php";
@@ -94,8 +93,16 @@ if ($category === "Bento Cake") {
     $allowed_sizes = [];
 
     foreach ([6, 8, 10] as $inches) {
+
         foreach ([1, 2, 3] as $layers) {
-            $allowed_sizes[] = "{$inches} inches - {$layers} Layer";
+
+            // Correct singular/plural layer labels
+            $layer_text = ($layers === 1)
+                ? "Layer"
+                : "Layers";
+
+            $allowed_sizes[] =
+                "{$inches} inches - {$layers} {$layer_text}";
         }
     }
 
@@ -123,6 +130,7 @@ $order_id = 0;
 
 $customer_name = $customer["full_name"];
 $contact_number = $customer["phone"];
+$delivery_method = "Delivery";
 $delivery_address = "";
 $quantity = 1;
 $preferred_date = "";
@@ -136,44 +144,64 @@ if (
 
     $customer_name = trim($_POST["customer_name"] ?? "");
     $contact_number = trim($_POST["contact_number"] ?? "");
+
+    $delivery_method = trim($_POST["delivery_method"] ?? "");
+
     $delivery_address = trim($_POST["delivery_address"] ?? "");
+
     $quantity = (int) ($_POST["quantity"] ?? 1);
     $preferred_date = trim($_POST["preferred_date"] ?? "");
-    $special_instructions = trim($_POST["special_instructions"] ?? "");
+
+    $special_instructions = trim(
+        $_POST["special_instructions"] ?? ""
+    );
+
+    // Validate delivery method
+    if (!in_array($delivery_method, ["Delivery", "Pick-up"], true)) {
+        $error = "Please select a valid delivery method.";
+    }
+
+    // Clear address if Pick-up was selected
+    if ($delivery_method === "Pick-up") {
+        $delivery_address = "";
+    }
 
     // Validate required fields
-    if (
-        $customer_name === "" ||
-        $contact_number === "" ||
-        $delivery_address === "" ||
-        $quantity < 1 ||
-        $quantity > 100
-    ) {
+    if ($error === "") {
 
-        $error = "Please complete all required fields and enter a valid quantity.";
+        if (
+            $customer_name === "" ||
+            $contact_number === "" ||
+            ($delivery_method === "Delivery" && $delivery_address === "") ||
+            $quantity < 1 ||
+            $quantity > 100
+        ) {
 
-    } elseif ($preferred_date !== "") {
+            $error = "Please complete all required fields and enter a valid quantity.";
 
-        // Validate date format and make sure it is not in the past
-        $date_object = DateTime::createFromFormat(
-            "Y-m-d",
-            $preferred_date
-        );
+        } elseif ($preferred_date !== "") {
 
-        $date_errors = DateTime::getLastErrors();
-
-        $valid_date = $date_object !== false &&
-            $date_object->format("Y-m-d") === $preferred_date &&
-            (
-                $date_errors === false ||
-                (
-                    $date_errors["warning_count"] === 0 &&
-                    $date_errors["error_count"] === 0
-                )
+            // Validate date format and make sure it is not in the past
+            $date_object = DateTime::createFromFormat(
+                "Y-m-d",
+                $preferred_date
             );
 
-        if (!$valid_date || $preferred_date < date("Y-m-d")) {
-            $error = "Please select a valid future date.";
+            $date_errors = DateTime::getLastErrors();
+
+            $valid_date = $date_object !== false &&
+                $date_object->format("Y-m-d") === $preferred_date &&
+                (
+                    $date_errors === false ||
+                    (
+                        $date_errors["warning_count"] === 0 &&
+                        $date_errors["error_count"] === 0
+                    )
+                );
+
+            if (!$valid_date || $preferred_date < date("Y-m-d")) {
+                $error = "Please select a valid future date.";
+            }
         }
     }
 
@@ -191,36 +219,48 @@ if (
             ? null
             : $special_instructions;
 
+        // Delivery fee:
+        // Delivery = NULL (admin will assign fee later)
+        // Pick-up = 0.00
+        $delivery_fee = ($delivery_method === "Pick-up")
+            ? 0.00
+            : null;
+
+        // Insert order
         $stmt = $conn->prepare(
             "INSERT INTO orders
             (
                 customer_id,
                 customer_name,
                 contact_number,
+                delivery_method,
                 delivery_address,
                 cake_id,
                 cake_size_id,
                 customization,
                 total_price,
                 quantity,
+                delivery_fee,
                 preferred_date,
                 special_instructions,
                 order_status
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')"
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')"
         );
 
         $stmt->bind_param(
-            "isssiisdiss",
+            "issssiisdidss",
             $customer_id,
             $customer_name,
             $contact_number,
+            $delivery_method,
             $delivery_address,
             $cake_id,
             $size_id,
             $instructions_value,
             $total_price,
             $quantity,
+            $delivery_fee,
             $date_value,
             $instructions_value
         );
@@ -248,7 +288,7 @@ $image_path = "../assets/images/" . $cake["image"];
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
 :root {
@@ -515,7 +555,8 @@ label {
 }
 
 input,
-textarea {
+textarea,
+select {
     width: 100%;
     padding: 13px 14px;
     font-family: inherit;
@@ -524,7 +565,9 @@ textarea {
     background: var(--bg);
     border: 1.5px solid var(--line-strong);
     border-radius: 10px;
-    transition: border-color .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
+    transition: border-color .2s var(--ease),
+                box-shadow .2s var(--ease),
+                background .2s var(--ease);
 }
 
 input::placeholder,
@@ -533,12 +576,14 @@ textarea::placeholder {
 }
 
 input:hover,
-textarea:hover {
+textarea:hover,
+select:hover {
     border-color: #d4bdb4;
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
     outline: none;
     background: #fff;
     border-color: var(--rose-deep);
@@ -584,7 +629,9 @@ button,
     border-radius: 999px;
     cursor: pointer;
     box-shadow: 0 8px 20px rgba(166, 90, 86, 0.28);
-    transition: background .2s var(--ease), transform .2s var(--ease), box-shadow .2s var(--ease);
+    transition: background .2s var(--ease),
+                transform .2s var(--ease),
+                box-shadow .2s var(--ease);
 }
 
 button {
@@ -785,7 +832,9 @@ button:hover,
     <div class="success" role="status">
 
         <div class="check" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M5 12.5l4.5 4.5L19 7.5"/>
             </svg>
         </div>
@@ -795,15 +844,22 @@ button:hover,
         <p>Your order has been saved. We'll review it and be in touch.</p>
 
         <div class="order-meta">
+
             <div>
                 <span>Order number</span>
                 <strong>#<?php echo $order_id; ?></strong>
             </div>
 
             <div>
+                <span>Delivery method</span>
+                <strong><?php echo htmlspecialchars($delivery_method); ?></strong>
+            </div>
+
+            <div>
                 <span>Status</span>
                 <strong class="status">Pending</strong>
             </div>
+
         </div>
 
         <a href="my_orders.php" class="btn">View my orders</a>
@@ -826,7 +882,10 @@ button:hover,
     <?php if ($error !== ""): ?>
 
         <div class="error" role="alert">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
                 <circle cx="12" cy="12" r="9"/>
                 <path d="M12 7.5v5M12 16h.01"/>
             </svg>
@@ -838,10 +897,12 @@ button:hover,
 
     <div class="layout">
 
-        <form method="POST">
+        <form method="POST" action="order_details.php">
 
             <input type="hidden" name="cake_id" value="<?php echo $cake_id; ?>">
             <input type="hidden" name="size_id" value="<?php echo $size_id; ?>">
+
+            <!-- CUSTOMER INFORMATION -->
 
             <div class="card">
 
@@ -877,7 +938,33 @@ button:hover,
 
                 </div>
 
+                <!-- DELIVERY METHOD -->
+
                 <div class="form-group">
+
+                    <label for="delivery_method">Delivery method</label>
+
+                    <select
+                        id="delivery_method"
+                        name="delivery_method"
+                        required
+                    >
+                        <option value="Delivery"
+                            <?php echo $delivery_method === "Delivery" ? "selected" : ""; ?>>
+                            Delivery
+                        </option>
+
+                        <option value="Pick-up"
+                            <?php echo $delivery_method === "Pick-up" ? "selected" : ""; ?>>
+                            Pick-up
+                        </option>
+                    </select>
+
+                </div>
+
+                <!-- DELIVERY ADDRESS -->
+
+                <div class="form-group" id="addressGroup">
 
                     <label for="delivery_address">
                         Delivery location / address
@@ -888,12 +975,13 @@ button:hover,
                         name="delivery_address"
                         autocomplete="street-address"
                         placeholder="Enter your complete delivery address"
-                        required
                     ><?php echo htmlspecialchars($delivery_address); ?></textarea>
 
                 </div>
 
             </div>
+
+            <!-- ORDER INFORMATION -->
 
             <div class="card">
 
@@ -952,9 +1040,11 @@ button:hover,
 
                 </div>
 
+                <!-- CAKE SUBTOTAL -->
+
                 <div class="total">
 
-                    <span>Total price</span>
+                    <span>Cake subtotal</span>
 
                     <strong id="totalPrice" aria-live="polite">
                         ₱<?php echo number_format(
@@ -965,6 +1055,15 @@ button:hover,
 
                 </div>
 
+                <!-- DELIVERY FEE NOTICE -->
+
+                <p id="deliveryFeeNote"
+                   style="font-size:13px;color:var(--ink-soft);margin-top:10px;">
+
+                    Delivery fee will be determined by the admin upon approval of your order.
+
+                </p>
+
                 <button type="submit" name="place_order">
                     Place order
                 </button>
@@ -972,6 +1071,8 @@ button:hover,
             </div>
 
         </form>
+
+        <!-- CAKE SUMMARY -->
 
         <aside class="card summary" aria-label="Order summary">
 
@@ -1011,6 +1112,9 @@ button:hover,
 </div>
 
 <script>
+
+// QUANTITY PRICE CALCULATION
+
 const quantityInput = document.querySelector('input[name="quantity"]');
 const totalPrice = document.getElementById("totalPrice");
 
@@ -1034,6 +1138,53 @@ if (quantityInput && totalPrice) {
 
     });
 }
+
+// DELIVERY / PICK-UP TOGGLE
+
+const deliveryMethod = document.getElementById("delivery_method");
+const addressGroup = document.getElementById("addressGroup");
+const deliveryAddress = document.getElementById("delivery_address");
+const deliveryFeeNote = document.getElementById("deliveryFeeNote");
+
+function toggleDeliveryAddress() {
+
+    if (!deliveryMethod || !addressGroup || !deliveryAddress) {
+        return;
+    }
+
+    if (deliveryMethod.value === "Delivery") {
+
+        addressGroup.style.display = "block";
+        deliveryAddress.required = true;
+        deliveryAddress.disabled = false;
+
+        if (deliveryFeeNote) {
+            deliveryFeeNote.textContent =
+                "Delivery fee will be determined by the admin upon approval of your order.";
+        }
+
+    } else {
+
+        addressGroup.style.display = "none";
+        deliveryAddress.required = false;
+        deliveryAddress.disabled = true;
+        deliveryAddress.value = "";
+
+        if (deliveryFeeNote) {
+            deliveryFeeNote.textContent =
+                "No delivery fee for pick-up orders.";
+        }
+
+    }
+}
+
+if (deliveryMethod) {
+    deliveryMethod.addEventListener("change", toggleDeliveryAddress);
+
+    // Initialize display when page loads
+    toggleDeliveryAddress();
+}
+
 </script>
 
 </body>

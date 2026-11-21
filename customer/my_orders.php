@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 require_once "../database.php";
@@ -87,6 +88,8 @@ $stmt = $conn->prepare("
         o.customer_name,
         o.contact_number,
         o.delivery_address,
+        o.delivery_method,
+        o.delivery_fee,
         o.total_price,
         o.quantity,
         o.preferred_date,
@@ -161,9 +164,7 @@ $custom_requests = $custom_stmt->get_result();
     --ease: cubic-bezier(.2, .7, .2, 1);
 }
 
-/* =========================================
-   GLOBAL
-========================================= */
+/* GLOBAL */
 
 * {
     margin: 0;
@@ -201,9 +202,7 @@ textarea {
     border-radius: 4px;
 }
 
-/* =========================================
-   HEADER
-========================================= */
+/* HEADER */
 
 header {
     position: sticky;
@@ -285,9 +284,7 @@ nav a.logout:hover {
     background: var(--bg-soft);
 }
 
-/* =========================================
-   PAGE HEADING
-========================================= */
+/* PAGE HEADING */
 
 .page-heading {
     padding: 56px var(--gutter) 48px;
@@ -310,9 +307,7 @@ nav a.logout:hover {
     font-family: var(--body);
 }
 
-/* =========================================
-   JUMP LINKS
-========================================= */
+/* JUMP LINKS */
 
 .jump-links {
     display: flex;
@@ -353,9 +348,7 @@ nav a.logout:hover {
     font-family: var(--body);
 }
 
-/* =========================================
-   MAIN CONTENT
-========================================= */
+/* MAIN CONTENT */
 
 .container {
     flex: 1;
@@ -389,9 +382,7 @@ nav a.logout:hover {
     padding: 1px 9px;
 }
 
-/* =========================================
-   ORDER CARD
-========================================= */
+/* ORDER CARD */
 
 .order-card {
     background: var(--surface);
@@ -427,9 +418,7 @@ nav a.logout:hover {
     font-family: var(--body);
 }
 
-/* =========================================
-   STATUS
-========================================= */
+/* STATUS */
 
 .status {
     display: inline-flex;
@@ -469,9 +458,32 @@ nav a.logout:hover {
     color: #9b1c1c;
 }
 
-/* =========================================
-   DETAILS GRID
-========================================= */
+/* READY STATUS */
+
+.status.ready {
+    background: #e5f3e8;
+    color: #216b3a;
+}
+
+.ready-notice {
+    margin: 0 0 22px;
+    padding: 15px 18px;
+    border: 1px solid #bfe3cb;
+    border-left: 4px solid #278348;
+    background: #edf8f0;
+    color: #216b3a;
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.ready-notice strong {
+    display: block;
+    margin-bottom: 3px;
+    font-size: 15px;
+}
+
+/* DETAILS GRID */
 
 .details-grid {
     display: grid;
@@ -499,9 +511,35 @@ nav a.logout:hover {
     overflow-wrap: anywhere;
 }
 
-/* =========================================
-   TOTAL PRICE
-========================================= */
+/* PRICE BREAKDOWN */
+
+.price-breakdown {
+    margin-top: 26px;
+    padding: 18px 22px;
+    background: var(--bg-soft);
+    border-radius: 12px;
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 7px 0;
+    font-size: 14px;
+}
+
+.price-row strong {
+    font-weight: 600;
+    text-align: right;
+}
+
+.price-pending {
+    color: var(--ink-soft);
+    font-size: 14px !important;
+    font-family: var(--body) !important;
+    font-weight: 600 !important;
+}
 
 .total {
     display: flex;
@@ -512,6 +550,12 @@ nav a.logout:hover {
     border-radius: 12px;
     margin-top: 26px;
     font-weight: 500;
+}
+
+.price-breakdown .total {
+    margin: 14px -22px -18px;
+    border-top: 1px solid var(--line-strong);
+    border-radius: 0 0 12px 12px;
 }
 
 .total span {
@@ -533,9 +577,7 @@ nav a.logout:hover {
     color: var(--ink-soft);
 }
 
-/* =========================================
-   ACTIONS
-========================================= */
+/* ACTIONS */
 
 .order-actions {
     margin-top: 20px;
@@ -562,9 +604,7 @@ nav a.logout:hover {
     border-color: #e6a8a2;
 }
 
-/* =========================================
-   ALERTS
-========================================= */
+/* ALERTS */
 
 .alert {
     display: flex;
@@ -600,9 +640,7 @@ nav a.logout:hover {
     border-left: 4px solid #9b1c1c;
 }
 
-/* =========================================
-   EMPTY STATE
-========================================= */
+/* EMPTY STATE */
 
 .empty {
     background: var(--surface);
@@ -649,9 +687,7 @@ nav a.logout:hover {
     transform: translateY(-1px);
 }
 
-/* =========================================
-   CUSTOM REQUEST LAYOUT
-========================================= */
+/* CUSTOM REQUEST LAYOUT */
 
 .custom-content-grid {
     display: grid;
@@ -700,9 +736,7 @@ nav a.logout:hover {
     margin-top: 22px;
 }
 
-/* =========================================
-   CUSTOM REQUEST NOTICES
-========================================= */
+/* CUSTOM REQUEST NOTICES */
 
 .notice {
     margin-top: 18px;
@@ -716,9 +750,7 @@ nav a.logout:hover {
     line-height: 1.6;
 }
 
-/* =========================================
-   RESPONSIVE - TABLET
-========================================= */
+/* TABLET */
 
 @media (max-width: 800px) {
 
@@ -734,12 +766,9 @@ nav a.logout:hover {
     .design-image {
         height: 220px;
     }
-
 }
 
-/* =========================================
-   RESPONSIVE - MOBILE
-========================================= */
+/* MOBILE */
 
 @media (max-width: 700px) {
 
@@ -804,12 +833,9 @@ nav a.logout:hover {
     .order-header h2 {
         font-size: 22px;
     }
-
 }
 
-/* =========================================
-   RESPONSIVE - SMALL MOBILE
-========================================= */
+/* SMALL MOBILE */
 
 @media (max-width: 480px) {
 
@@ -838,6 +864,14 @@ nav a.logout:hover {
         padding: 16px;
     }
 
+    .price-breakdown {
+        padding: 16px;
+    }
+
+    .price-breakdown .total {
+        margin: 14px -16px -16px;
+    }
+
     .total strong {
         font-size: 24px;
     }
@@ -846,12 +880,9 @@ nav a.logout:hover {
         font-size: 13px;
         padding: 8px 14px;
     }
-
 }
 
-/* =========================================
-   ACCESSIBILITY
-========================================= */
+/* ACCESSIBILITY */
 
 @media (prefers-reduced-motion: reduce) {
 
@@ -864,7 +895,6 @@ nav a.logout:hover {
     *::after {
         transition-duration: 0.01ms !important;
     }
-
 }
 
 </style>
@@ -981,13 +1011,31 @@ nav a.logout:hover {
 
             <?php
 
-            $status = strtolower($order["order_status"] ?? "pending");
+            /* ORIGINAL ORDER STATUS */
+            $status = strtolower(trim($order["order_status"] ?? "pending"));
 
+            /* STATUS CLASS */
             $status_class = in_array(
                 $status,
                 ["pending", "approved", "completed", "cancelled"],
                 true
             ) ? $status : "pending";
+
+            /* CUSTOMER-FACING STATUS */
+            $display_status = ucfirst($status);
+
+            if ($status === "completed") {
+
+                $method = strtolower(trim($order["delivery_method"] ?? ""));
+
+                if ($method === "delivery") {
+                    $display_status = "Ready for Delivery";
+                    $status_class = "ready";
+                } elseif ($method === "pick-up" || $method === "pickup") {
+                    $display_status = "Ready for Pick-up";
+                    $status_class = "ready";
+                }
+            }
 
             ?>
 
@@ -1007,11 +1055,41 @@ nav a.logout:hover {
 
                     </div>
 
-                    <span class="status <?php echo $status_class; ?>">
-                        <?php echo htmlspecialchars(ucfirst($status)); ?>
+                    <span class="status <?php echo htmlspecialchars($status_class); ?>">
+                        <?php echo htmlspecialchars($display_status); ?>
                     </span>
 
                 </div>
+
+                <!-- READY NOTIFICATION -->
+
+                <?php if ($status === "completed"): ?>
+
+                    <?php
+                    $method = strtolower(trim($order["delivery_method"] ?? ""));
+                    ?>
+
+                    <?php if ($method === "delivery"): ?>
+
+                        <div class="ready-notice">
+                            <strong>🎂 Your cake is ready for delivery!</strong>
+                            Your order is completed and ready to be delivered
+                            to your provided address.
+                        </div>
+
+                    <?php elseif ($method === "pick-up" || $method === "pickup"): ?>
+
+                        <div class="ready-notice">
+                            <strong>🎂 Your cake is ready for pick-up!</strong>
+                            Your order is completed and ready for collection.
+                            You may now pick up your cake at CakeCraft.
+                        </div>
+
+                    <?php endif; ?>
+
+                <?php endif; ?>
+
+                <!-- ORDER DETAILS -->
 
                 <div class="details-grid">
 
@@ -1061,6 +1139,13 @@ nav a.logout:hover {
                         </p>
                     </div>
 
+                    <div>
+                        <p class="detail-label">Delivery method</p>
+                        <p class="detail-value">
+                            <?php echo htmlspecialchars($order["delivery_method"] ?? "Not specified"); ?>
+                        </p>
+                    </div>
+
                     <div class="span-2">
                         <p class="detail-label">Delivery address</p>
                         <p class="detail-value">
@@ -1081,15 +1166,89 @@ nav a.logout:hover {
 
                 </div>
 
-                <div class="total">
+                <!-- PRICE BREAKDOWN -->
 
-                    <span>Total price</span>
+                <?php
 
-                    <strong>
-                        ₱<?php echo number_format((float) $order["total_price"], 2); ?>
-                    </strong>
+                $cake_subtotal = (float) ($order["total_price"] ?? 0);
+
+                $delivery_method = strtolower(
+                    trim((string) ($order["delivery_method"] ?? ""))
+                );
+
+                $delivery_fee = $order["delivery_fee"];
+
+                $is_pickup = (
+                    $delivery_method === "pick-up" ||
+                    $delivery_method === "pickup"
+                );
+
+                $fee_is_set = (
+                    $delivery_fee !== null &&
+                    $delivery_fee !== ""
+                );
+
+                if ($is_pickup) {
+                    $delivery_fee = 0;
+                    $fee_is_set = true;
+                }
+
+                $grand_total = $fee_is_set
+                    ? $cake_subtotal + (float) $delivery_fee
+                    : null;
+
+                ?>
+
+                <div class="price-breakdown">
+
+                    <div class="price-row">
+                        <span>Cake subtotal</span>
+                        <strong>
+                            ₱<?php echo number_format($cake_subtotal, 2); ?>
+                        </strong>
+                    </div>
+
+                    <div class="price-row">
+                        <span>Delivery fee</span>
+
+                        <strong>
+                            <?php if ($fee_is_set): ?>
+
+                                ₱<?php echo number_format((float) $delivery_fee, 2); ?>
+
+                            <?php else: ?>
+
+                                <span class="price-pending">
+                                    Pending delivery fee
+                                </span>
+
+                            <?php endif; ?>
+                        </strong>
+                    </div>
+
+                    <div class="total">
+
+                        <span>Grand total</span>
+
+                        <strong<?php echo !$fee_is_set ? ' class="price-pending"' : ''; ?>>
+
+                            <?php if ($fee_is_set): ?>
+
+                                ₱<?php echo number_format((float) $grand_total, 2); ?>
+
+                            <?php else: ?>
+
+                                Awaiting delivery fee
+
+                            <?php endif; ?>
+
+                        </strong>
+
+                    </div>
 
                 </div>
+
+                <!-- CANCEL ORDER -->
 
                 <?php if ($status === "pending"): ?>
 
@@ -1109,7 +1268,9 @@ nav a.logout:hover {
                             <button type="submit"
                                     name="cancel_order"
                                     class="cancel-btn">
+
                                 Cancel order
+
                             </button>
 
                         </form>
@@ -1191,15 +1352,15 @@ nav a.logout:hover {
 
                     </div>
 
-                    <span class="status <?php echo $custom_status_class; ?>">
+                    <span class="status <?php echo htmlspecialchars($custom_status_class); ?>">
                         <?php echo htmlspecialchars(ucfirst($custom_status)); ?>
                     </span>
 
                 </div>
 
-                <div class="custom-content-grid">
+                <!-- UPLOADED DESIGN -->
 
-                    <!-- UPLOADED DESIGN -->
+                <div class="custom-content-grid">
 
                     <div class="image-container">
 
@@ -1363,7 +1524,9 @@ nav a.logout:hover {
                             <button type="submit"
                                     name="cancel_custom_request"
                                     class="cancel-btn">
+
                                 Cancel request
+
                             </button>
 
                         </form>
@@ -1419,6 +1582,8 @@ nav a.logout:hover {
 </html>
 
 <?php
+
 $stmt->close();
 $custom_stmt->close();
+
 ?>
