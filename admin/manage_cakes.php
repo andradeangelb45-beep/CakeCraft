@@ -1,0 +1,479 @@
+
+<?php
+session_start();
+require_once "../database.php";
+
+if (!isset($_SESSION["admin_id"])) {
+    header("Location: login.php");
+    exit();
+}
+
+$message = "";
+$message_type = "";
+
+// Delete cake
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["delete_cake"])) {
+
+    $cake_id = (int) $_POST["cake_id"];
+
+    // Check if cake has existing orders
+    $check = $conn->prepare(
+        "SELECT COUNT(*) AS total FROM orders WHERE cake_id = ?"
+    );
+    $check->bind_param("i", $cake_id);
+    $check->execute();
+
+    $order_count = $check->get_result()->fetch_assoc()["total"];
+    $check->close();
+
+    if ($order_count > 0) {
+        $message = "This cake cannot be deleted because it already has customer orders.";
+        $message_type = "error";
+
+    } else {
+
+        try {
+            $conn->begin_transaction();
+
+            $delete_sizes = $conn->prepare(
+                "DELETE FROM cake_sizes WHERE cake_id = ?"
+            );
+            $delete_sizes->bind_param("i", $cake_id);
+            $delete_sizes->execute();
+            $delete_sizes->close();
+
+            $delete_cake = $conn->prepare(
+                "DELETE FROM cake_options WHERE id = ?"
+            );
+            $delete_cake->bind_param("i", $cake_id);
+            $delete_cake->execute();
+
+            if ($delete_cake->affected_rows > 0) {
+                $conn->commit();
+                $message = "Cake successfully deleted.";
+                $message_type = "success";
+            } else {
+                $conn->rollback();
+                $message = "Unable to delete cake.";
+                $message_type = "error";
+            }
+
+            $delete_cake->close();
+
+        } catch (Exception $e) {
+            $conn->rollback();
+            $message = "Unable to delete cake. Please try again.";
+            $message_type = "error";
+        }
+    }
+}
+
+// Get all cakes
+$sql = "SELECT * FROM cake_options ORDER BY id DESC";
+$result = $conn->query($sql);
+
+// Get all sizes in one query
+$all_sizes = [];
+
+if ($result && $result->num_rows > 0) {
+
+    $size_result = $conn->query(
+        "SELECT cake_id, size_name, price
+         FROM cake_sizes
+         ORDER BY id ASC"
+    );
+
+    while ($size = $size_result->fetch_assoc()) {
+        $all_sizes[$size["cake_id"]][] = $size;
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Manage Cakes | CakeCraft Admin</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #fffaf7;
+            --surface: #ffffff;
+            --ink: #3b2724;
+            --ink-soft: #6f5d57;
+            --rose: #a65a56;
+            --line: #efe0da;
+            --shadow: 0 6px 24px rgba(73, 48, 45, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            min-height: 100vh;
+        }
+
+        header {
+            background: var(--ink);
+            color: white;
+            padding: 18px 6%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 26px;
+        }
+
+        header h2 span {
+            color: #e3a9a5;
+        }
+
+        header a {
+            color: white;
+            text-decoration: none;
+            border: 1px solid rgba(255,255,255,.5);
+            padding: 9px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1180px;
+            margin: auto;
+            padding: 45px 6%;
+        }
+
+        .back {
+            display: inline-block;
+            margin-bottom: 25px;
+            color: var(--rose);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--ink-soft);
+            margin-bottom: 25px;
+        }
+
+        .top-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 25px;
+        }
+
+        .add-button {
+            background: var(--rose);
+            color: white;
+            padding: 12px 22px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .add-button:hover {
+            background: #8c4845;
+        }
+
+        .cake-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        .cake-card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .cake-image {
+            width: 100%;
+            height: 230px;
+            object-fit: cover;
+            background: #f7eeea;
+        }
+
+        .no-image {
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f7eeea;
+            color: var(--ink-soft);
+        }
+
+        .cake-content {
+            padding: 23px;
+        }
+
+        .cake-content h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .category {
+            display: inline-block;
+            background: #f8e9e6;
+            color: #8c4845;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 13px;
+        }
+
+        .description {
+            color: var(--ink-soft);
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .price {
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .sizes {
+            border-top: 1px solid var(--line);
+            padding-top: 14px;
+            margin-bottom: 18px;
+        }
+
+        .sizes p {
+            font-size: 14px;
+            margin: 7px 0;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .edit-button {
+            background: #70452f;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .edit-button:hover {
+            background: #523222;
+        }
+
+        .delete-button {
+            background: var(--rose);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: inherit;
+        }
+
+        .delete-button:hover {
+            background: #8c4845;
+        }
+
+        .message {
+            padding: 14px 18px;
+            border-radius: 8px;
+            margin-bottom: 22px;
+        }
+
+        .success {
+            background: #e8f5e9;
+            color: #256029;
+        }
+
+        .error {
+            background: #fdecea;
+            color: #a3261e;
+        }
+
+        .empty {
+            background: white;
+            padding: 40px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            text-align: center;
+            color: var(--ink-soft);
+        }
+
+        @media (max-width: 700px) {
+            .cake-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 29px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h2>Cake<span>Craft</span> <small style="font-family:Arial;font-size:12px;">ADMIN</small></h2>
+    <a href="logout.php">Logout</a>
+</header>
+
+<div class="container">
+
+    <a href="dashboard.php" class="back">← Back to Dashboard</a>
+
+    <h1>Manage Cakes</h1>
+
+    <p class="subtitle">
+        View and manage the cakes available on your CakeCraft website.
+    </p>
+
+    <?php if ($message !== ""): ?>
+        <div class="message <?php echo htmlspecialchars($message_type); ?>">
+            <?php echo htmlspecialchars($message); ?>
+        </div>
+    <?php endif; ?>
+
+    <div class="top-actions">
+        <a href="add_cake.php" class="add-button">+ Add New Cake</a>
+    </div>
+
+    <?php if ($result && $result->num_rows > 0): ?>
+
+        <div class="cake-grid">
+
+            <?php while ($cake = $result->fetch_assoc()): ?>
+
+                <div class="cake-card">
+
+                    <?php if (!empty($cake["image"])): ?>
+                        <img
+                            class="cake-image"
+                            src="../assets/images/<?php echo htmlspecialchars(basename($cake["image"])); ?>"
+                            alt="<?php echo htmlspecialchars($cake["cake_name"]); ?>"
+                        >
+                    <?php else: ?>
+                        <div class="no-image">No cake image available</div>
+                    <?php endif; ?>
+
+                    <div class="cake-content">
+
+                        <h2>
+                            <?php echo htmlspecialchars($cake["cake_name"]); ?>
+                        </h2>
+
+                        <span class="category">
+                            <?php echo htmlspecialchars($cake["category"] ?? "Uncategorized"); ?>
+                        </span>
+
+                        <p class="description">
+                            <?php echo htmlspecialchars($cake["description"]); ?>
+                        </p>
+
+                        <p class="price">
+                            Base Price: ₱<?php echo number_format((float)$cake["base_price"], 2); ?>
+                        </p>
+
+                        <div class="sizes">
+                            <strong>Available Sizes and Prices</strong>
+
+                            <?php
+                            $cake_sizes = $all_sizes[$cake["id"]] ?? [];
+                            ?>
+
+                            <?php if (!empty($cake_sizes)): ?>
+
+                                <?php foreach ($cake_sizes as $size): ?>
+                                    <p>
+                                        <?php echo htmlspecialchars($size["size_name"]); ?>
+                                        — ₱<?php echo number_format((float)$size["price"], 2); ?>
+                                    </p>
+                                <?php endforeach; ?>
+
+                            <?php else: ?>
+                                <p>No sizes added yet.</p>
+                            <?php endif; ?>
+
+                        </div>
+
+                        <div class="actions">
+
+                            <a
+                                href="edit_cake.php?id=<?php echo (int)$cake["id"]; ?>"
+                                class="edit-button">
+                                Edit Cake
+                            </a>
+
+                            <form method="POST"
+                                  onsubmit="return confirm('Are you sure you want to delete this cake?');">
+
+                                <input
+                                    type="hidden"
+                                    name="cake_id"
+                                    value="<?php echo (int)$cake["id"]; ?>"
+                                >
+
+                                <button
+                                    type="submit"
+                                    name="delete_cake"
+                                    class="delete-button">
+                                    Delete Cake
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    </div>
+                </div>
+
+            <?php endwhile; ?>
+
+        </div>
+
+    <?php else: ?>
+
+        <div class="empty">
+            <h2>No Cakes Available</h2>
+            <p>Click "Add New Cake" to add your first cake.</p>
+        </div>
+
+    <?php endif; ?>
+
+</div>
+
+</body>
+</html>

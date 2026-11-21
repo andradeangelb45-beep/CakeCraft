@@ -1,0 +1,709 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700;800&display=swap');
+
+/* ---------- TOKENS ---------- */
+
+:root {
+    --bg: #ffffff;
+    --bg-soft: #fde8ef;
+    --bg-tint: #fff5f8;
+    --surface: #ffffff;
+    --ink: #2a1d24;
+    --ink-soft: #6d5b64;
+    --rose: #f0558f;
+    --rose-deep: #e0407d;
+    --rose-darker: #c42d68;
+    --line: #f7cfdd;
+    --footer: #fde8ef;
+
+    --font-body: 'DM Sans', system-ui, sans-serif;
+    --font-display: 'Playfair Display', Georgia, serif;
+
+    --gutter: max(6%, calc((100vw - 1180px) / 2));
+    --radius: 14px;
+    --radius-btn: 8px;
+    --shadow: 0 6px 24px rgba(240, 85, 143, 0.10);
+    --shadow-lift: 0 14px 34px rgba(240, 85, 143, 0.20);
+    --ease: cubic-bezier(.2, .7, .2, 1);
+}
+
+/* ---------- BASE ---------- */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 90px;
+}
+
+body {
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--ink);
+    background-color: var(--bg);
+    -webkit-font-smoothing: antialiased;
+}
+
+img {
+    display: block;
+    max-width: 100%;
+}
+
+:focus-visible {
+    outline: 3px solid var(--rose);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+/* ---------- NAVIGATION ---------- */
+
+header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-top: 6px solid var(--rose);
+    background: #fff;
+    box-shadow: 0 2px 14px rgba(42, 29, 36, 0.06);
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px var(--gutter);
+    background: #fff;
+}
+
+.logo {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+}
+
+.logo span {
+    color: var(--rose);
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+    gap: 34px;
+}
+
+.nav-links a {
+    position: relative;
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 15px;
+    font-weight: 500;
+    padding: 6px 0;
+    transition: color .2s var(--ease);
+}
+
+.nav-links a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--rose);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .25s var(--ease);
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+    color: var(--rose);
+}
+
+.nav-links a:hover::after,
+.nav-links a.active::after {
+    transform: scaleX(1);
+}
+
+.nav-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.login-btn,
+.signup-btn {
+    text-decoration: none;
+    padding: 10px 22px;
+    border-radius: var(--radius-btn);
+    font-size: 14px;
+    font-weight: 600;
+    transition: background .2s var(--ease),
+                color .2s var(--ease),
+                border-color .2s var(--ease),
+                box-shadow .2s var(--ease);
+}
+
+.login-btn {
+    color: var(--ink);
+    background: #fff;
+    border: 1.5px solid #e6d7dd;
+}
+
+.login-btn:hover {
+    color: var(--rose);
+    border-color: var(--rose);
+    background: var(--bg-tint);
+}
+
+.signup-btn,
+.primary-btn {
+    background: var(--rose);
+    color: #fff;
+    border: 1.5px solid var(--rose);
+}
+
+.signup-btn:hover {
+    background: var(--rose-deep);
+    border-color: var(--rose-deep);
+    box-shadow: var(--shadow);
+}
+
+/* ---------- HERO ---------- */
+
+.hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 580px;
+    padding: 70px var(--gutter);
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 20% 30%, #ffe3ee 0%, transparent 55%),
+        linear-gradient(110deg, #fff0f5 0%, #fde1ec 55%, #f9cfe0 100%);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    flex: none;
+    max-width: 520px;
+}
+
+.subtitle {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--rose);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    margin-bottom: 22px;
+}
+
+.subtitle::before {
+    content: "";
+    width: 32px;
+    height: 2px;
+    background: var(--rose);
+}
+
+.hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 5vw, 3.9rem);
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+    color: #1f1519;
+    margin-bottom: 22px;
+}
+
+.hero h1 span {
+    color: var(--rose);
+}
+
+.hero-description {
+    color: #4a3a42;
+    font-size: 17px;
+    line-height: 1.75;
+    margin-bottom: 34px;
+    max-width: 460px;
+}
+
+.primary-btn {
+    display: inline-block;
+    padding: 15px 32px;
+    border-radius: var(--radius-btn);
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 8px 20px rgba(240, 85, 143, 0.32);
+    transition: background .2s var(--ease),
+                transform .2s var(--ease),
+                box-shadow .2s var(--ease);
+}
+
+.primary-btn:hover {
+    background: var(--rose-deep);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(240, 85, 143, 0.38);
+}
+
+/* Full-bleed cake photo on the right, fading softly into the pink background */
+.hero-image {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 64%;
+    z-index: 1;
+}
+
+.hero-image::before {
+    display: none;
+}
+
+.hero-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 0;
+    box-shadow: none;
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,.55) 22%, #000 48%);
+    mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,.55) 22%, #000 48%);
+}
+
+/* soft pink tint over the photo so it blends with the theme */
+.hero-image::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, rgba(253, 225, 236, .85) 0%, rgba(253, 225, 236, 0) 55%),
+                linear-gradient(to top, rgba(240, 85, 143, .12), transparent 40%);
+    pointer-events: none;
+}
+
+/* ---------- CAKES ---------- */
+
+.cakes-section {
+    padding: 96px var(--gutter);
+}
+
+.section-heading {
+    text-align: center;
+    max-width: 620px;
+    margin: 0 auto 56px;
+}
+
+.section-heading > p {
+    color: var(--rose);
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+}
+
+.section-heading h2,
+.about-section h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.9rem, 3.4vw, 2.6rem);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    margin: 10px 0 14px;
+}
+
+/* pink underline accent under section titles */
+.section-heading h2 {
+    position: relative;
+    display: inline-block;
+    padding-bottom: 14px;
+}
+
+.section-heading h2::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    width: 52px;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--rose);
+}
+
+.section-heading span {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 16px;
+}
+
+.cake-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+}
+
+.cake-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform .3s var(--ease),
+                box-shadow .3s var(--ease);
+}
+
+.cake-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lift);
+}
+
+.cake-card img {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+    background: var(--bg-soft);
+    transition: transform .5s var(--ease);
+}
+
+.cake-card:hover img {
+    transform: scale(1.04);
+}
+
+.cake-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 26px;
+}
+
+.cake-info h3 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.cake-info p {
+    flex: 1;
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--ink-soft);
+    margin-bottom: 20px;
+}
+
+/* "Customize Cake" now a pink button like "Add to Cart" in the reference */
+.cake-info a {
+    display: block;
+    text-align: center;
+    background: var(--rose);
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 18px;
+    border-radius: var(--radius-btn);
+    transition: background .2s var(--ease),
+                box-shadow .2s var(--ease);
+}
+
+.cake-info a:hover {
+    background: var(--rose-deep);
+    box-shadow: var(--shadow);
+}
+
+/* ---------- HOW TO ORDER ---------- */
+
+.how-section {
+    padding: 96px var(--gutter);
+    background: linear-gradient(180deg, var(--bg-tint), var(--bg-soft));
+}
+
+.how-section .section-heading {
+    margin-bottom: 56px;
+}
+
+.steps-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    align-items: stretch;
+}
+
+/* Step Cards */
+
+.step {
+    max-width: none;
+    margin: 0;
+    padding: 32px 26px;
+    text-align: center;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-top: 4px solid var(--rose);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    transition: transform .3s var(--ease),
+                box-shadow .3s var(--ease);
+}
+
+.step:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lift);
+}
+
+/* Number Circles - 01, 02, 03 kept */
+
+.step h3 {
+    display: grid;
+    place-items: center;
+    width: 68px;
+    height: 68px;
+    margin: 0 auto 20px;
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--rose);
+    background: var(--bg-soft);
+    border: 1.5px solid var(--rose);
+    border-radius: 50%;
+}
+
+.step h4 {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.step > p {
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+/* Highlight Step 02 */
+
+.step-custom {
+    border-color: var(--line);
+    background: #fff;
+}
+
+/* Custom Cake Image Upload Information */
+
+.step-design-note {
+    text-align: left;
+    padding: 15px;
+    margin-top: 20px;
+    background: var(--bg-tint);
+    border-radius: 12px;
+    border: 1.5px dashed var(--rose);
+}
+
+.step-design-note strong {
+    display: block;
+    color: var(--rose-darker);
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.step-design-note p {
+    color: var(--ink-soft);
+    font-size: 13px;
+    line-height: 1.65;
+}
+
+/* ---------- ABOUT ---------- */
+
+.about-section {
+    padding: 100px var(--gutter);
+    text-align: center;
+}
+
+.about-section > div {
+    max-width: 720px;
+    margin: auto;
+    padding: 56px 44px;
+    background: var(--bg-tint);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+}
+
+.about-section p:last-child {
+    font-size: 17px;
+    line-height: 1.85;
+    color: var(--ink-soft);
+}
+
+/* ---------- FOOTER ---------- */
+
+footer {
+    background: var(--footer);
+    color: var(--ink);
+    text-align: center;
+    padding: 56px 20px 40px;
+    border-top: 1px solid var(--line);
+}
+
+footer h2 {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--rose);
+    margin-bottom: 8px;
+}
+
+footer p {
+    font-size: 14px;
+    margin: 8px 0;
+    color: var(--ink-soft);
+}
+
+footer a {
+    color: var(--rose-darker);
+    font-weight: 500;
+    text-underline-offset: 3px;
+}
+
+.contact-details {
+    max-width: 440px;
+    margin: 28px auto;
+    padding: 24px 28px;
+    text-align: left;
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.contact-details h3 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--bg-soft);
+}
+
+.contact-details strong {
+    color: var(--ink);
+}
+
+/* copyright line */
+footer > p:last-child {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+}
+
+/* ---------- RESPONSIVE ---------- */
+
+@media (max-width: 1024px) {
+
+    .cake-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .hero-image {
+        width: 58%;
+    }
+
+    .steps-container {
+        gap: 22px;
+    }
+
+    .step {
+        padding: 28px 20px;
+    }
+}
+
+@media (max-width: 768px) {
+
+    .navbar {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 14px;
+        padding: 14px 6%;
+    }
+
+    .nav-links {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+        gap: 22px;
+        flex-wrap: wrap;
+    }
+
+    .hero {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        min-height: 0;
+        padding: 0 0 56px;
+    }
+
+    .hero-content {
+        max-width: none;
+        padding: 8px 6% 0;
+    }
+
+    .hero-description {
+        max-width: none;
+    }
+
+    .hero-image {
+        position: relative;
+        width: 100%;
+        height: 300px;
+    }
+
+    .hero-image img {
+        -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+        mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+    }
+
+    .hero-image::after {
+        background: none;
+    }
+
+    .cakes-section,
+    .how-section {
+        padding: 64px 6%;
+    }
+
+    .cake-container,
+    .steps-container {
+        grid-template-columns: 1fr;
+    }
+
+    .step {
+        padding: 28px 22px;
+    }
+
+    .about-section {
+        padding: 64px 6%;
+    }
+
+    .about-section > div {
+        padding: 38px 24px;
+    }
+}
+
+/* ---------- REDUCED MOTION ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+    }
+}
