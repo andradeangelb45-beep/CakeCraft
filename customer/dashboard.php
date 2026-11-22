@@ -1,5 +1,7 @@
+
 <?php
 session_start();
+require_once "../database.php";
 
 // Check if customer is logged in
 if (!isset($_SESSION["customer_id"])) {
@@ -7,7 +9,29 @@ if (!isset($_SESSION["customer_id"])) {
     exit();
 }
 
+$customer_id = (int) $_SESSION["customer_id"];
 $customer_name = $_SESSION["customer_name"] ?? "Customer";
+
+// Get unread notification count
+$notification_count = 0;
+
+$stmt_notifications = $conn->prepare("
+    SELECT COUNT(*) AS unread_count
+    FROM notifications
+    WHERE customer_id = ? AND is_read = 0
+");
+
+if ($stmt_notifications) {
+    $stmt_notifications->bind_param("i", $customer_id);
+    $stmt_notifications->execute();
+
+    $notification_result = $stmt_notifications->get_result();
+    $notification_data = $notification_result->fetch_assoc();
+
+    $notification_count = (int) ($notification_data["unread_count"] ?? 0);
+
+    $stmt_notifications->close();
+}
 ?>
 
 <!DOCTYPE html>
@@ -57,7 +81,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             --ease: cubic-bezier(.2, .7, .2, 1);
         }
 
-
         /* =========================
            RESET
         ========================= */
@@ -68,11 +91,9 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             box-sizing: border-box;
         }
 
-
         html {
             scroll-behavior: smooth;
         }
-
 
         body {
             font-family: var(--font-body);
@@ -89,19 +110,16 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             flex-direction: column;
         }
 
-
         img {
             display: block;
             max-width: 100%;
         }
-
 
         :focus-visible {
             outline: 3px solid var(--rose);
             outline-offset: 3px;
             border-radius: 4px;
         }
-
 
         /* =========================
            NAVIGATION
@@ -122,7 +140,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             padding: 16px var(--gutter);
         }
 
-
         .nav-container {
             max-width: 1400px;
             margin: auto;
@@ -133,7 +150,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
 
             gap: 30px;
         }
-
 
         .logo {
             font-family: var(--font-display);
@@ -148,18 +164,15 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             white-space: nowrap;
         }
 
-
         .logo span {
             color: var(--rose);
         }
-
 
         .nav-links {
             display: flex;
             align-items: center;
             gap: 30px;
         }
-
 
         .nav-links a {
             position: relative;
@@ -174,7 +187,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
 
             transition: color .2s var(--ease);
         }
-
 
         .nav-links a::after {
             content: "";
@@ -194,18 +206,15 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             transition: transform .25s var(--ease);
         }
 
-
         .nav-links a:hover,
         .nav-links a.active {
             color: var(--rose-deep);
         }
 
-
         .nav-links a:hover::after,
         .nav-links a.active::after {
             transform: scaleX(1);
         }
-
 
         /* Logout Button */
 
@@ -225,17 +234,71 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
                 color .2s var(--ease);
         }
 
-
         .nav-links a.logout::after {
             display: none;
         }
-
 
         .nav-links a.logout:hover {
             background: var(--bg-soft);
             color: var(--rose-deep);
         }
 
+        /* Notification Bell */
+
+        .notification-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            position: relative;
+
+            width: 38px;
+            height: 38px;
+
+            border-radius: 50%;
+
+            text-decoration: none;
+            color: var(--ink);
+
+            font-size: 21px;
+
+            transition: background .2s ease, color .2s ease;
+        }
+
+        .nav-links a.notification-link::after {
+            display: none;
+        }
+
+        .notification-link:hover {
+            background: var(--bg-soft);
+            color: var(--rose-deep);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+
+            min-width: 18px;
+            height: 18px;
+
+            padding: 0 5px;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            background: #dc3545;
+            color: #fff;
+
+            border-radius: 999px;
+
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1;
+
+            border: 2px solid var(--bg);
+        }
 
         /* =========================
            MAIN CONTENT
@@ -251,7 +314,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
 
             flex: 1;
         }
-
 
         /* =========================
            WELCOME BANNER
@@ -281,11 +343,9 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             box-shadow: 0 8px 25px rgba(139, 81, 70, 0.12);
         }
 
-
         .welcome-text {
             max-width: 720px;
         }
-
 
         .welcome-text .subtitle {
             display: inline-flex;
@@ -303,7 +363,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             margin-bottom: 15px;
         }
 
-
         .welcome-text .subtitle::before {
             content: "";
 
@@ -312,7 +371,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
 
             background: rgba(255, 255, 255, 0.7);
         }
-
 
         .welcome-text h1 {
             font-family: var(--font-display);
@@ -326,7 +384,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             line-height: 1.3;
         }
 
-
         .welcome-text p {
             font-size: 15px;
 
@@ -336,7 +393,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
 
             max-width: 680px;
         }
-
 
         .welcome-icon {
             width: 110px;
@@ -355,15 +411,13 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             flex-shrink: 0;
         }
 
-
         /* =========================
            QUICK ACCESS HEADING
-        ========================= */
+           ========================= */
 
         .section-heading {
             margin-bottom: 25px;
         }
-
 
         .section-heading h2 {
             font-family: var(--font-display);
@@ -376,13 +430,11 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             margin-bottom: 8px;
         }
 
-
         .section-heading p {
             color: var(--ink-soft);
 
             font-size: 15px;
         }
-
 
         /* =========================
            DASHBOARD CARDS
@@ -395,7 +447,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
 
             gap: 24px;
         }
-
 
         .dashboard-card {
             background: var(--surface);
@@ -419,7 +470,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
                 border-color .3s var(--ease);
         }
 
-
         .dashboard-card:hover {
             transform: translateY(-5px);
 
@@ -427,7 +477,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
 
             border-color: #dfb9ad;
         }
-
 
         /* Card Icons */
 
@@ -446,21 +495,17 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             margin-bottom: 22px;
         }
 
-
         .icon-cakes {
             background: #f8e7e3;
         }
-
 
         .icon-customize {
             background: #f4eadc;
         }
 
-
         .icon-orders {
             background: #e9e9f5;
         }
-
 
         /* Card Text */
 
@@ -475,7 +520,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             margin-bottom: 10px;
         }
 
-
         .dashboard-card p {
             color: var(--ink-soft);
 
@@ -485,7 +529,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
 
             margin-bottom: 24px;
         }
-
 
         /* Card Links */
 
@@ -507,11 +550,9 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             transition: color .2s var(--ease);
         }
 
-
         .card-link:hover {
             color: var(--rose-darker);
         }
-
 
         .card-link span {
             display: inline-block;
@@ -519,11 +560,9 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             transition: transform .2s var(--ease);
         }
 
-
         .card-link:hover span {
             transform: translateX(4px);
         }
-
 
         /* =========================
            HELP / CONTACT SECTION
@@ -548,7 +587,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             box-shadow: var(--shadow);
         }
 
-
         .bottom-icon {
             width: 52px;
             height: 52px;
@@ -566,7 +604,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             flex-shrink: 0;
         }
 
-
         .bottom-text h3 {
             font-family: var(--font-display);
 
@@ -576,7 +613,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             margin-bottom: 7px;
         }
 
-
         .bottom-text p {
             font-size: 14px;
 
@@ -584,7 +620,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
 
             color: var(--ink-soft);
         }
-
 
         .bottom-text a {
             color: var(--rose-deep);
@@ -596,12 +631,10 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             transition: color .2s;
         }
 
-
         .bottom-text a:hover {
             color: var(--rose-darker);
             text-decoration: underline;
         }
-
 
         /* =========================
            FOOTER
@@ -622,7 +655,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
 
             background: var(--bg);
         }
-
 
         /* =========================
            RESPONSIVE - TABLET
@@ -645,9 +677,7 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             .welcome-text h1 {
                 font-size: 29px;
             }
-
         }
-
 
         /* =========================
            RESPONSIVE - MOBILE
@@ -659,13 +689,11 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
                 padding: 14px 6%;
             }
 
-
             .nav-container {
                 flex-direction: column;
 
                 gap: 15px;
             }
-
 
             .nav-links {
                 width: 100%;
@@ -677,23 +705,19 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
                 gap: 12px 20px;
             }
 
-
             .nav-links a {
                 font-size: 13px;
             }
 
-
             .nav-links a.logout {
                 padding: 8px 16px;
             }
-
 
             .main-container {
                 margin: 30px auto;
 
                 padding: 0 6%;
             }
-
 
             .welcome-section {
                 padding: 30px 25px;
@@ -703,26 +727,21 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
                 margin-bottom: 35px;
             }
 
-
             .welcome-text h1 {
                 font-size: 25px;
             }
-
 
             .welcome-text p {
                 font-size: 14px;
             }
 
-
             .welcome-icon {
                 display: none;
             }
 
-
             .section-heading h2 {
                 font-size: 24px;
             }
-
 
             .dashboard-grid {
                 grid-template-columns: 1fr;
@@ -730,25 +749,21 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
                 gap: 18px;
             }
 
-
             .dashboard-card {
                 min-height: 240px;
 
                 padding: 25px;
             }
 
-
             .dashboard-card h3 {
                 font-size: 20px;
             }
-
 
             .bottom-section {
                 padding: 20px;
 
                 align-items: flex-start;
             }
-
 
             .bottom-icon {
                 width: 45px;
@@ -757,13 +772,10 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
                 font-size: 21px;
             }
 
-
             .bottom-text h3 {
                 font-size: 17px;
             }
-
         }
-
 
         /* =========================
            SMALL MOBILE
@@ -775,34 +787,27 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
                 gap: 8px;
             }
 
-
             .nav-links a {
                 padding: 5px 0;
                 font-size: 12px;
             }
 
-
             .nav-links a.logout {
                 padding: 8px 14px;
             }
-
 
             .welcome-section {
                 padding: 25px 20px;
             }
 
-
             .welcome-text h1 {
                 font-size: 23px;
             }
 
-
             .dashboard-card {
                 padding: 22px;
             }
-
         }
-
 
         /* =========================
            REDUCED MOTION
@@ -819,9 +824,7 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
             *::after {
                 transition-duration: 0.01ms !important;
             }
-
         }
-
     </style>
 </head>
 
@@ -857,6 +860,24 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
                 My Profile
             </a>
 
+            <!-- Notification Bell -->
+            <a href="notifications.php"
+               class="notification-link"
+               aria-label="Notifications<?php echo $notification_count > 0 ? ', ' . $notification_count . ' unread' : ''; ?>"
+               title="Notifications">
+
+                🔔
+
+                <?php if ($notification_count > 0): ?>
+
+                    <span class="notification-badge">
+                        <?php echo $notification_count > 99 ? "99+" : $notification_count; ?>
+                    </span>
+
+                <?php endif; ?>
+
+            </a>
+
             <a href="logout.php" class="logout">
                 Logout
             </a>
@@ -867,13 +888,11 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
 
 </header>
 
-
 <!-- =========================
      MAIN CONTENT
 ========================= -->
 
 <main class="main-container">
-
 
     <!-- WELCOME BANNER -->
 
@@ -898,17 +917,13 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
 
         </div>
 
-
         <div class="welcome-icon">
             🎂
         </div>
 
     </section>
 
-
-    <!-- =========================
-         QUICK ACCESS
-    ========================= -->
+    <!-- QUICK ACCESS -->
 
     <section>
 
@@ -922,9 +937,7 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
 
         </div>
 
-
         <div class="dashboard-grid">
-
 
             <!-- BROWSE CAKES -->
 
@@ -947,7 +960,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
 
             </div>
 
-
             <!-- CUSTOMIZE CAKE -->
 
             <div class="dashboard-card">
@@ -968,7 +980,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
                 </a>
 
             </div>
-
 
             <!-- MY ORDERS -->
 
@@ -991,22 +1002,17 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
 
             </div>
 
-
         </div>
 
     </section>
 
-
-    <!-- =========================
-         HELP SECTION
-    ========================= -->
+    <!-- HELP SECTION -->
 
     <section class="bottom-section">
 
         <div class="bottom-icon">
             💌
         </div>
-
 
         <div class="bottom-text">
 
@@ -1028,13 +1034,9 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
 
     </section>
 
-
 </main>
 
-
-<!-- =========================
-     FOOTER
-========================= -->
+<!-- FOOTER -->
 
 <footer>
 
@@ -1042,7 +1044,6 @@ $customer_name = $_SESSION["customer_name"] ?? "Customer";
     All rights reserved.
 
 </footer>
-
 
 </body>
 </html>

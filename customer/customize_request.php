@@ -28,6 +28,7 @@ $allowed_flavors = [
 ];
 
 $allowed_delivery_methods = ["Pickup", "Delivery"];
+$allowed_payment_methods = ["Cash", "GCash"];
 
 // Generate valid cake size values
 $allowed_sizes = [];
@@ -58,6 +59,7 @@ $old_quantity = "1";
 $old_date = "";
 $old_delivery_method = "Delivery";
 $old_address = "";
+$old_payment_method = "Cash";
 $old_instructions = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -73,6 +75,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $old_delivery_method = trim($_POST["delivery_method"] ?? "Delivery");
     $old_address = trim($_POST["delivery_address"] ?? "");
+
+    // Payment method
+    $old_payment_method = trim($_POST["payment_method"] ?? "");
 
     $old_instructions = trim($_POST["special_instructions"] ?? "");
 
@@ -161,6 +166,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $message = "Please enter your delivery address.";
 
     } elseif (
+        !in_array($old_payment_method, $allowed_payment_methods, true)
+    ) {
+
+        $message = "Please select a valid payment method.";
+
+    } elseif (
         !isset($_FILES["design_image"]) ||
         $_FILES["design_image"]["error"] !== UPLOAD_ERR_OK
     ) {
@@ -222,6 +233,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                     try {
 
+                        // Insert custom cake request including payment method
                         $stmt = $conn->prepare(
                             "INSERT INTO custom_cake_requests
                             (
@@ -235,15 +247,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                 delivery_method,
                                 delivery_address,
                                 special_instructions,
+                                payment_method,
                                 request_status
                             )
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')"
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')"
                         );
 
                         $quantity = (int) $old_quantity;
 
                         $stmt->bind_param(
-                            "issssissss",
+                            "issssisssss",
                             $customer_id,
                             $image_name,
                             $old_size,
@@ -253,7 +266,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             $old_date,
                             $old_delivery_method,
                             $old_address,
-                            $old_instructions
+                            $old_instructions,
+                            $old_payment_method
                         );
 
                         if (!$stmt->execute()) {
@@ -276,6 +290,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $old_date = "";
                         $old_delivery_method = "Delivery";
                         $old_address = "";
+                        $old_payment_method = "Cash";
                         $old_instructions = "";
                         $old_quantity = "1";
 
@@ -512,7 +527,7 @@ textarea {
     background: var(--rose-dark);
 }
 
-/* Delivery method */
+/* Delivery and Payment Options */
 
 .delivery-options {
     display: grid;
@@ -542,6 +557,7 @@ textarea {
     height: 18px;
     margin-top: 3px;
     accent-color: var(--rose-deep);
+    flex-shrink: 0;
 }
 
 .delivery-option strong {
@@ -558,6 +574,16 @@ textarea {
 
 #delivery_address_field {
     margin-top: 18px;
+}
+
+.payment-notice {
+    background: #fff5f3;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 13px 15px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top: 12px;
 }
 
 @media(max-width:600px) {
@@ -845,7 +871,7 @@ textarea {
 
                         <div>
                             <strong>Delivery</strong>
-                            <span>Admin will determine the delivery fee after reviewing your order.</span>
+                            <span>Admin will determine the delivery fee after reviewing your request.</span>
                         </div>
 
                     </label>
@@ -854,7 +880,7 @@ textarea {
 
             </div>
 
-            <!-- Delivery Address (shown only when Delivery is selected) -->
+            <!-- Delivery Address -->
 
             <div
                 class="field"
@@ -876,6 +902,60 @@ textarea {
                 <p class="hint">
                     Please provide your complete address. The delivery fee will be added after Admin approves your request.
                 </p>
+
+            </div>
+
+            <!-- Payment Method -->
+
+            <div class="field">
+
+                <label>
+                    Payment method *
+                </label>
+
+                <div class="delivery-options">
+
+                    <label class="delivery-option">
+
+                        <input
+                            type="radio"
+                            name="payment_method"
+                            value="Cash"
+                            <?php echo $old_payment_method === "Cash" ? "checked" : ""; ?>
+                            required
+                        >
+
+                        <div>
+                            <strong>Cash</strong>
+                            <span>Pay in cash upon pick-up or delivery.</span>
+                        </div>
+
+                    </label>
+
+                    <label class="delivery-option">
+
+                        <input
+                            type="radio"
+                            name="payment_method"
+                            value="GCash"
+                            <?php echo $old_payment_method === "GCash" ? "checked" : ""; ?>
+                            required
+                        >
+
+                        <div>
+                            <strong>GCash</strong>
+                            <span>Pay through GCash after your request is approved.</span>
+                        </div>
+
+                    </label>
+
+                </div>
+
+                <div class="payment-notice">
+                    <strong>Payment reminder:</strong>
+                    Your custom cake request will first be reviewed by the admin.
+                    If you choose GCash, payment instructions will be provided after your request is approved and the final quotation is set.
+                </div>
 
             </div>
 

@@ -96,7 +96,6 @@ if ($category === "Bento Cake") {
 
         foreach ([1, 2, 3] as $layers) {
 
-            // Correct singular/plural layer labels
             $layer_text = ($layers === 1)
                 ? "Layer"
                 : "Layers";
@@ -117,7 +116,7 @@ if ($category === "Bento Cake") {
     );
 }
 
-// Make sure the selected size is allowed for this category
+// Validate selected size
 if (!in_array($size["size_name"], $allowed_sizes, true)) {
     header("Location: customize.php?cake_id=" . $cake_id);
     exit();
@@ -132,6 +131,7 @@ $customer_name = $customer["full_name"];
 $contact_number = $customer["phone"];
 $delivery_method = "Delivery";
 $delivery_address = "";
+$payment_method = "";
 $quantity = 1;
 $preferred_date = "";
 $special_instructions = "";
@@ -146,8 +146,9 @@ if (
     $contact_number = trim($_POST["contact_number"] ?? "");
 
     $delivery_method = trim($_POST["delivery_method"] ?? "");
-
     $delivery_address = trim($_POST["delivery_address"] ?? "");
+
+    $payment_method = trim($_POST["payment_method"] ?? "");
 
     $quantity = (int) ($_POST["quantity"] ?? 1);
     $preferred_date = trim($_POST["preferred_date"] ?? "");
@@ -159,6 +160,14 @@ if (
     // Validate delivery method
     if (!in_array($delivery_method, ["Delivery", "Pick-up"], true)) {
         $error = "Please select a valid delivery method.";
+    }
+
+    // Validate payment method
+    if (
+        $error === "" &&
+        !in_array($payment_method, ["Cash", "GCash"], true)
+    ) {
+        $error = "Please select a valid payment method.";
     }
 
     // Clear address if Pick-up was selected
@@ -181,7 +190,7 @@ if (
 
         } elseif ($preferred_date !== "") {
 
-            // Validate date format and make sure it is not in the past
+            // Validate date
             $date_object = DateTime::createFromFormat(
                 "Y-m-d",
                 $preferred_date
@@ -219,14 +228,14 @@ if (
             ? null
             : $special_instructions;
 
-        // Delivery fee:
-        // Delivery = NULL (admin will assign fee later)
+        // Delivery fee
+        // Delivery = NULL (admin assigns fee later)
         // Pick-up = 0.00
         $delivery_fee = ($delivery_method === "Pick-up")
             ? 0.00
             : null;
 
-        // Insert order
+        // Insert order including selected payment method
         $stmt = $conn->prepare(
             "INSERT INTO orders
             (
@@ -243,13 +252,15 @@ if (
                 delivery_fee,
                 preferred_date,
                 special_instructions,
+                payment_method,
+                payment_status,
                 order_status
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')"
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Unpaid', 'Pending')"
         );
 
         $stmt->bind_param(
-            "issssiisdidss",
+            "issssiisdidsss",
             $customer_id,
             $customer_name,
             $contact_number,
@@ -262,14 +273,19 @@ if (
             $quantity,
             $delivery_fee,
             $date_value,
-            $instructions_value
+            $instructions_value,
+            $payment_method
         );
 
         if ($stmt->execute()) {
+
             $order_id = $conn->insert_id;
             $success = true;
+
         } else {
+
             $error = "Unable to place your order. Please try again.";
+
         }
 
         $stmt->close();
@@ -284,10 +300,12 @@ $image_path = "../assets/images/" . $cake["image"];
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Order Details | CakeCraft</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
@@ -306,9 +324,12 @@ $image_path = "../assets/images/" . $cake["image"];
     --error-ink: #9b1c1c;
     --ok-bg: #e8f6ec;
     --ok-ink: #17602f;
+
     --font-body: 'DM Sans', system-ui, sans-serif;
     --font-display: 'Playfair Display', Georgia, serif;
+
     --gutter: max(6%, calc((100vw - 1180px) / 2));
+
     --shadow: 0 6px 24px rgba(73, 48, 45, 0.08);
     --ease: cubic-bezier(.2, .7, .2, 1);
 }
@@ -340,13 +361,17 @@ header {
     position: sticky;
     top: 0;
     z-index: 50;
+
     display: flex;
     justify-content: space-between;
     align-items: center;
+
     padding: 16px var(--gutter);
+
     background: rgba(255, 250, 247, 0.88);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
+
     border-bottom: 1px solid var(--line);
 }
 
@@ -565,9 +590,11 @@ select {
     background: var(--bg);
     border: 1.5px solid var(--line-strong);
     border-radius: 10px;
-    transition: border-color .2s var(--ease),
-                box-shadow .2s var(--ease),
-                background .2s var(--ease);
+
+    transition:
+        border-color .2s var(--ease),
+        box-shadow .2s var(--ease),
+        background .2s var(--ease);
 }
 
 input::placeholder,
@@ -594,6 +621,23 @@ textarea {
     min-height: 110px;
     resize: vertical;
     line-height: 1.6;
+}
+
+/* PAYMENT OPTIONS */
+
+.payment-note {
+    margin-top: 10px;
+    padding: 13px 15px;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--ink-soft);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.payment-note strong {
+    color: var(--ink);
 }
 
 .total {
@@ -628,10 +672,13 @@ button,
     border: none;
     border-radius: 999px;
     cursor: pointer;
+
     box-shadow: 0 8px 20px rgba(166, 90, 86, 0.28);
-    transition: background .2s var(--ease),
-                transform .2s var(--ease),
-                box-shadow .2s var(--ease);
+
+    transition:
+        background .2s var(--ease),
+        transform .2s var(--ease),
+        box-shadow .2s var(--ease);
 }
 
 button {
@@ -730,6 +777,7 @@ button:hover,
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
     padding: 6px 0;
 }
 
@@ -805,7 +853,9 @@ button:hover,
 }
 
 @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
         transition-duration: 0.01ms !important;
     }
 }
@@ -856,6 +906,11 @@ button:hover,
             </div>
 
             <div>
+                <span>Payment method</span>
+                <strong><?php echo htmlspecialchars($payment_method); ?></strong>
+            </div>
+
+            <div>
                 <span>Status</span>
                 <strong class="status">Pending</strong>
             </div>
@@ -899,8 +954,11 @@ button:hover,
 
         <form method="POST" action="order_details.php">
 
-            <input type="hidden" name="cake_id" value="<?php echo $cake_id; ?>">
-            <input type="hidden" name="size_id" value="<?php echo $size_id; ?>">
+            <input type="hidden" name="cake_id"
+                   value="<?php echo $cake_id; ?>">
+
+            <input type="hidden" name="size_id"
+                   value="<?php echo $size_id; ?>">
 
             <!-- CUSTOMER INFORMATION -->
 
@@ -976,6 +1034,39 @@ button:hover,
                         autocomplete="street-address"
                         placeholder="Enter your complete delivery address"
                     ><?php echo htmlspecialchars($delivery_address); ?></textarea>
+
+                </div>
+
+                <!-- PAYMENT METHOD -->
+
+                <div class="form-group">
+
+                    <label for="payment_method">Payment method</label>
+
+                    <select
+                        id="payment_method"
+                        name="payment_method"
+                        required
+                    >
+                        <option value="" disabled
+                            <?php echo $payment_method === "" ? "selected" : ""; ?>>
+                            Select payment method
+                        </option>
+
+                        <option value="Cash"
+                            <?php echo $payment_method === "Cash" ? "selected" : ""; ?>>
+                            Cash
+                        </option>
+
+                        <option value="GCash"
+                            <?php echo $payment_method === "GCash" ? "selected" : ""; ?>>
+                            GCash
+                        </option>
+                    </select>
+
+                    <div class="payment-note" id="paymentNote">
+                        Please select your preferred payment method.
+                    </div>
 
                 </div>
 
@@ -1180,9 +1271,41 @@ function toggleDeliveryAddress() {
 
 if (deliveryMethod) {
     deliveryMethod.addEventListener("change", toggleDeliveryAddress);
-
-    // Initialize display when page loads
     toggleDeliveryAddress();
+}
+
+// PAYMENT METHOD NOTE
+
+const paymentMethod = document.getElementById("payment_method");
+const paymentNote = document.getElementById("paymentNote");
+
+function updatePaymentNote() {
+
+    if (!paymentMethod || !paymentNote) {
+        return;
+    }
+
+    if (paymentMethod.value === "Cash") {
+
+        paymentNote.innerHTML =
+            "<strong>Cash:</strong> You can pay in cash upon delivery or pick-up of your order.";
+
+    } else if (paymentMethod.value === "GCash") {
+
+        paymentNote.innerHTML =
+            "<strong>GCash:</strong> Payment will be made after your order is approved and the final amount is confirmed. You will then be able to submit your payment proof.";
+
+    } else {
+
+        paymentNote.textContent =
+            "Please select your preferred payment method.";
+
+    }
+}
+
+if (paymentMethod) {
+    paymentMethod.addEventListener("change", updatePaymentNote);
+    updatePaymentNote();
 }
 
 </script>

@@ -64,6 +64,16 @@ $cancelled_query = $conn->query("
          WHERE request_status = 'Cancelled') AS total
 ");
 $total_cancelled = $cancelled_query->fetch_assoc()["total"];
+
+// Count payments awaiting verification
+$payment_query = $conn->query("
+    SELECT
+        (SELECT COUNT(*) FROM orders
+         WHERE payment_status = 'Pending Verification') +
+        (SELECT COUNT(*) FROM custom_cake_requests
+         WHERE payment_status = 'Pending Verification') AS total
+");
+$total_pending_payments = $payment_query->fetch_assoc()["total"];
 ?>
 
 <!DOCTYPE html>
@@ -705,7 +715,7 @@ $total_cancelled = $cancelled_query->fetch_assoc()["total"];
         <div class="menu-card">
             <h3>Manage cakes</h3>
             <p>Add, view, and manage the cakes available on your website.</p>
-            <a href="manage_cakes.php">Manage cakes</a>
+            <a href="add_cake.php">Manage cakes</a>
         </div>
 
         <!-- CUSTOMERS -->
@@ -720,6 +730,21 @@ $total_cancelled = $cancelled_query->fetch_assoc()["total"];
             <h3>Manage orders</h3>
             <p>View customer cake orders and their order information.</p>
             <a href="orders.php">View orders</a>
+        </div>
+
+        <!-- PAYMENT VERIFICATION -->
+        <div class="menu-card">
+            <h3>Payment Verification</h3>
+            <p>
+                Verify customer GCash payments and review submitted
+                payment receipts.
+                <br><br>
+                <strong>
+                    <?php echo number_format((int)$total_pending_payments); ?>
+                    payment(s) awaiting verification
+                </strong>
+            </p>
+            <a href="verify_payments.php">Verify payments</a>
         </div>
 
     </div>

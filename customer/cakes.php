@@ -9,6 +9,29 @@ if (!isset($_SESSION["customer_id"])) {
     exit();
 }
 
+$customer_id = (int) $_SESSION["customer_id"];
+
+// Get unread notification count
+$notification_count = 0;
+
+$stmt_notifications = $conn->prepare("
+    SELECT COUNT(*) AS unread_count
+    FROM notifications
+    WHERE customer_id = ? AND is_read = 0
+");
+
+if ($stmt_notifications) {
+    $stmt_notifications->bind_param("i", $customer_id);
+    $stmt_notifications->execute();
+
+    $notification_result = $stmt_notifications->get_result();
+    $notification_data = $notification_result->fetch_assoc();
+
+    $notification_count = (int) ($notification_data["unread_count"] ?? 0);
+
+    $stmt_notifications->close();
+}
+
 // Cake categories available for filtering
 $categories = [
     "Birthday Cake",
@@ -20,19 +43,31 @@ $categories = [
 ];
 
 $selected_category = trim($_GET["category"] ?? "");
+
 if (!in_array($selected_category, $categories, true)) {
     $selected_category = "";
 }
 
 // Get available cakes (optionally filtered by category)
 if ($selected_category !== "") {
-    $stmt = $conn->prepare("SELECT * FROM cake_options WHERE category = ? ORDER BY id DESC");
+
+    $stmt = $conn->prepare("
+        SELECT *
+        FROM cake_options
+        WHERE category = ?
+        ORDER BY id DESC
+    ");
+
     $stmt->bind_param("s", $selected_category);
     $stmt->execute();
+
     $result = $stmt->get_result();
+
 } else {
+
     $sql = "SELECT * FROM cake_options ORDER BY id DESC";
     $result = $conn->query($sql);
+
 }
 
 if (!$result) {
@@ -120,6 +155,8 @@ if (!$result) {
             font-size: 28px;
             font-weight: 700;
             letter-spacing: -0.01em;
+            text-decoration: none;
+            color: var(--ink);
         }
 
         .logo span {
@@ -180,6 +217,49 @@ if (!$result) {
 
         nav a.logout:hover {
             background: var(--bg-soft);
+        }
+
+        /* Notification Bell */
+        .notification-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            text-decoration: none;
+            color: var(--ink);
+            font-size: 21px;
+            transition: background .2s ease, color .2s ease;
+        }
+
+        .notification-link::after {
+            display: none;
+        }
+
+        .notification-link:hover {
+            background: var(--bg-soft);
+            color: var(--rose-deep);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #dc3545;
+            color: #fff;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1;
+            border: 2px solid var(--bg);
         }
 
         /* Page heading */
@@ -316,7 +396,6 @@ if (!$result) {
             margin-bottom: 8px;
         }
 
-        /* Category label shown below cake name */
         .cake-category {
             display: inline-block;
             align-self: flex-start;
@@ -462,13 +541,42 @@ if (!$result) {
 
 <header>
 
-    <div class="logo">Cake<span>Craft</span></div>
+    <a href="dashboard.php" class="logo">
+        Cake<span>Craft</span>
+    </a>
 
     <nav>
         <a href="dashboard.php">Home</a>
-        <a href="cakes.php" class="active" aria-current="page">Cakes</a>
-        <a href="my_orders.php">My Orders</a>
-        <a href="logout.php" class="logout">Logout</a>
+
+        <a href="cakes.php" class="active" aria-current="page">
+            Cakes
+        </a>
+
+        <a href="my_orders.php">
+            My Orders
+        </a>
+
+        <!-- Notification Bell -->
+        <a href="notifications.php"
+           class="notification-link"
+           aria-label="Notifications<?php echo $notification_count > 0 ? ', ' . $notification_count . ' unread' : ''; ?>"
+           title="Notifications">
+
+            🔔
+
+            <?php if ($notification_count > 0): ?>
+
+                <span class="notification-badge">
+                    <?php echo $notification_count > 99 ? "99+" : $notification_count; ?>
+                </span>
+
+            <?php endif; ?>
+
+        </a>
+
+        <a href="logout.php" class="logout">
+            Logout
+        </a>
     </nav>
 
 </header>
