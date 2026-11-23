@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 require_once "../database.php";
@@ -12,7 +11,6 @@ $message = "";
 $message_type = "";
 
 $result = $conn->query("SELECT * FROM site_contact WHERE id = 1");
-
 $contact = $result ? $result->fetch_assoc() : null;
 
 // Initialize contact settings if not yet created
@@ -22,8 +20,8 @@ if (!$contact) {
 
     $stmt = $conn->prepare(
         "INSERT INTO site_contact
-         (id, contact_name, email, contact_number)
-         VALUES (1, ?, ?, '')"
+         (id, contact_name, email, contact_number, location)
+         VALUES (1, ?, ?, '', '')"
     );
 
     $stmt->bind_param("ss", $default_name, $default_email);
@@ -40,16 +38,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $contact_name = trim($_POST["contact_name"] ?? "");
     $email = trim($_POST["email"] ?? "");
     $contact_number = trim($_POST["contact_number"] ?? "");
+    $location = trim($_POST["location"] ?? "");
 
     if ($contact_name === "" || $email === "") {
 
         $message = "Please complete the name and email address.";
         $message_type = "error";
 
+        // Keep entered values
+        $contact["contact_name"] = $contact_name;
+        $contact["email"] = $email;
+        $contact["contact_number"] = $contact_number;
+        $contact["location"] = $location;
+
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 
         $message = "Please enter a valid email address.";
         $message_type = "error";
+
+        // Keep entered values
+        $contact["contact_name"] = $contact_name;
+        $contact["email"] = $email;
+        $contact["contact_number"] = $contact_number;
+        $contact["location"] = $location;
 
     } else {
 
@@ -57,15 +68,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             "UPDATE site_contact
              SET contact_name = ?,
                  email = ?,
-                 contact_number = ?
+                 contact_number = ?,
+                 location = ?
              WHERE id = 1"
         );
 
         $stmt->bind_param(
-            "sss",
+            "ssss",
             $contact_name,
             $email,
-            $contact_number
+            $contact_number,
+            $location
         );
 
         if ($stmt->execute()) {
@@ -81,6 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         $stmt->close();
 
+        // Reload updated contact settings
         $result = $conn->query("SELECT * FROM site_contact WHERE id = 1");
         $contact = $result->fetch_assoc();
     }
@@ -308,13 +322,14 @@ button:hover {
     <div class="card">
 
         <?php if ($message !== ""): ?>
-            <div class="message <?php echo $message_type; ?>">
+            <div class="message <?php echo htmlspecialchars($message_type); ?>">
                 <?php echo htmlspecialchars($message); ?>
             </div>
         <?php endif; ?>
 
         <form method="POST">
 
+            <!-- CONTACT PERSON -->
             <div class="form-group">
                 <label for="contact_name">Contact Person Name</label>
                 <input
@@ -328,6 +343,7 @@ button:hover {
                 <p class="help">Name shown to customers on the homepage.</p>
             </div>
 
+            <!-- EMAIL -->
             <div class="form-group">
                 <label for="email">Contact Email</label>
                 <input
@@ -341,6 +357,7 @@ button:hover {
                 <p class="help">Customers can click this email to contact you.</p>
             </div>
 
+            <!-- CONTACT NUMBER -->
             <div class="form-group">
                 <label for="contact_number">Contact Number</label>
                 <input
@@ -354,6 +371,23 @@ button:hover {
                 <p class="help">Optional. Customers can click this number to call.</p>
             </div>
 
+            <!-- BUSINESS LOCATION -->
+            <div class="form-group">
+                <label for="location">Business Location</label>
+                <input
+                    type="text"
+                    id="location"
+                    name="location"
+                    value="<?php echo htmlspecialchars($contact["location"] ?? ""); ?>"
+                    maxlength="255"
+                    placeholder="e.g. Poblacion, Lopez, Quezon"
+                >
+                <p class="help">
+                    Enter the CakeCraft business address or location displayed on the homepage.
+                </p>
+            </div>
+
+            <!-- BUTTONS -->
             <div class="buttons">
                 <button type="submit">Save Changes</button>
                 <a href="dashboard.php" class="back-btn">Cancel</a>

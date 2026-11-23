@@ -3,77 +3,97 @@
 session_start();
 require_once "../database.php";
 
-// Check if admin is logged in
+// Check admin login
 if (!isset($_SESSION["admin_id"])) {
     header("Location: login.php");
     exit();
 }
 
-// Count total cakes
+// Total cakes
 $cake_query = $conn->query("SELECT COUNT(*) AS total FROM cake_options");
-$total_cakes = $cake_query->fetch_assoc()["total"];
+$total_cakes = (int)$cake_query->fetch_assoc()["total"];
 
-// Count total customers
+// Total customers
 $customer_query = $conn->query("SELECT COUNT(*) AS total FROM customers");
-$total_customers = $customer_query->fetch_assoc()["total"];
+$total_customers = (int)$customer_query->fetch_assoc()["total"];
 
-// Count ALL orders (regular + customized)
+// Total active orders (exclude archived)
 $order_query = $conn->query("
     SELECT
-        (SELECT COUNT(*) FROM orders) +
-        (SELECT COUNT(*) FROM custom_cake_requests) AS total
+        (SELECT COUNT(*) FROM orders WHERE archived_at IS NULL) +
+        (SELECT COUNT(*) FROM custom_cake_requests WHERE archived_at IS NULL) AS total
 ");
-$total_orders = $order_query->fetch_assoc()["total"];
+$total_orders = (int)$order_query->fetch_assoc()["total"];
 
-// Count Pending orders
+// Pending
 $pending_query = $conn->query("
     SELECT
         (SELECT COUNT(*) FROM orders
-         WHERE order_status = 'Pending') +
+         WHERE order_status = 'Pending' AND archived_at IS NULL) +
         (SELECT COUNT(*) FROM custom_cake_requests
-         WHERE request_status = 'Pending') AS total
+         WHERE request_status = 'Pending' AND archived_at IS NULL) AS total
 ");
-$total_pending = $pending_query->fetch_assoc()["total"];
+$total_pending = (int)$pending_query->fetch_assoc()["total"];
 
-// Count Approved orders
+// Approved
 $approved_query = $conn->query("
     SELECT
         (SELECT COUNT(*) FROM orders
-         WHERE order_status = 'Approved') +
+         WHERE order_status = 'Approved' AND archived_at IS NULL) +
         (SELECT COUNT(*) FROM custom_cake_requests
-         WHERE request_status = 'Approved') AS total
+         WHERE request_status = 'Approved' AND archived_at IS NULL) AS total
 ");
-$total_approved = $approved_query->fetch_assoc()["total"];
+$total_approved = (int)$approved_query->fetch_assoc()["total"];
 
-// Count Completed orders
+// Ready for Pickup
+$pickup_query = $conn->query("
+    SELECT
+        (SELECT COUNT(*) FROM orders
+         WHERE order_status = 'Ready for Pickup' AND archived_at IS NULL) +
+        (SELECT COUNT(*) FROM custom_cake_requests
+         WHERE request_status = 'Ready for Pickup' AND archived_at IS NULL) AS total
+");
+$total_ready_pickup = (int)$pickup_query->fetch_assoc()["total"];
+
+// Out for Delivery
+$delivery_query = $conn->query("
+    SELECT
+        (SELECT COUNT(*) FROM orders
+         WHERE order_status = 'Out for Delivery' AND archived_at IS NULL) +
+        (SELECT COUNT(*) FROM custom_cake_requests
+         WHERE request_status = 'Out for Delivery' AND archived_at IS NULL) AS total
+");
+$total_out_delivery = (int)$delivery_query->fetch_assoc()["total"];
+
+// Completed
 $completed_query = $conn->query("
     SELECT
         (SELECT COUNT(*) FROM orders
-         WHERE order_status = 'Completed') +
+         WHERE order_status = 'Completed' AND archived_at IS NULL) +
         (SELECT COUNT(*) FROM custom_cake_requests
-         WHERE request_status = 'Completed') AS total
+         WHERE request_status = 'Completed' AND archived_at IS NULL) AS total
 ");
-$total_completed = $completed_query->fetch_assoc()["total"];
+$total_completed = (int)$completed_query->fetch_assoc()["total"];
 
-// Count Cancelled orders
+// Cancelled
 $cancelled_query = $conn->query("
     SELECT
         (SELECT COUNT(*) FROM orders
-         WHERE order_status = 'Cancelled') +
+         WHERE order_status = 'Cancelled' AND archived_at IS NULL) +
         (SELECT COUNT(*) FROM custom_cake_requests
-         WHERE request_status = 'Cancelled') AS total
+         WHERE request_status = 'Cancelled' AND archived_at IS NULL) AS total
 ");
-$total_cancelled = $cancelled_query->fetch_assoc()["total"];
+$total_cancelled = (int)$cancelled_query->fetch_assoc()["total"];
 
-// Count payments awaiting verification
+// Pending payments
 $payment_query = $conn->query("
     SELECT
         (SELECT COUNT(*) FROM orders
-         WHERE payment_status = 'Pending Verification') +
+         WHERE payment_status = 'Pending Verification' AND archived_at IS NULL) +
         (SELECT COUNT(*) FROM custom_cake_requests
-         WHERE payment_status = 'Pending Verification') AS total
+         WHERE payment_status = 'Pending Verification' AND archived_at IS NULL) AS total
 ");
-$total_pending_payments = $payment_query->fetch_assoc()["total"];
+$total_pending_payments = (int)$payment_query->fetch_assoc()["total"];
 ?>
 
 <!DOCTYPE html>
@@ -86,7 +106,6 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 
     <style>
@@ -100,15 +119,11 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
             --rose-deep: #a65a56;
             --rose-darker: #8c4845;
             --line: #efe0da;
-
             --font-body: 'DM Sans', system-ui, sans-serif;
             --font-display: 'Playfair Display', Georgia, serif;
-
             --gutter: max(6%, calc((100vw - 1180px) / 2));
-
             --shadow: 0 6px 24px rgba(73, 48, 45, 0.08);
             --shadow-lift: 0 14px 34px rgba(73, 48, 45, 0.14);
-
             --ease: cubic-bezier(.2, .7, .2, 1);
         }
 
@@ -133,22 +148,16 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
             border-radius: 4px;
         }
 
-        /* =========================
-           HEADER
-        ========================= */
-
+        /* HEADER */
         header {
             position: sticky;
             top: 0;
             z-index: 50;
-
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 20px;
-
             padding: 16px var(--gutter);
-
             background: var(--ink);
             color: #fff;
         }
@@ -173,15 +182,11 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
         .brand .badge {
             padding: 3px 11px;
             border-radius: 999px;
-
-            background: rgba(255, 255, 255, 0.14);
-
+            background: rgba(255,255,255,.14);
             font-size: 12px;
             font-weight: 600;
-            letter-spacing: 0.04em;
+            letter-spacing: .04em;
         }
-
-        /* HEADER BUTTONS */
 
         .header-actions {
             display: flex;
@@ -192,21 +197,16 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
         header a {
             color: #fff;
             text-decoration: none;
-
             font-size: 14px;
             font-weight: 600;
-
             padding: 9px 20px;
-            border: 1.5px solid rgba(255, 255, 255, 0.45);
+            border: 1.5px solid rgba(255,255,255,.45);
             border-radius: 999px;
-
-            transition:
-                background .2s var(--ease),
-                border-color .2s var(--ease);
+            transition: background .2s var(--ease), border-color .2s var(--ease);
         }
 
         header a:hover {
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(255,255,255,.12);
             border-color: #fff;
         }
 
@@ -220,14 +220,22 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
             border-color: var(--rose-darker);
         }
 
+        /* ACCOUNT SETTINGS */
+        .account-settings-btn {
+            background: rgba(255,255,255,.12);
+            border-color: rgba(255,255,255,.55);
+        }
+
+        .account-settings-btn:hover {
+            background: rgba(255,255,255,.22);
+            border-color: #fff;
+        }
+
         header :focus-visible {
             outline-color: #fff;
         }
 
-        /* =========================
-           MAIN CONTENT
-        ========================= */
-
+        /* MAIN */
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -240,10 +248,10 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
 
         .welcome h1 {
             font-family: var(--font-display);
-            font-size: clamp(1.9rem, 4vw, 2.6rem);
+            font-size: clamp(1.9rem,4vw,2.6rem);
             font-weight: 600;
             line-height: 1.15;
-            letter-spacing: -0.015em;
+            letter-spacing: -.015em;
             margin-bottom: 10px;
         }
 
@@ -252,33 +260,24 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
             font-size: 16px;
         }
 
-        /* =========================
-           GENERAL STATISTICS
-        ========================= */
-
+        /* GENERAL STATISTICS */
         .stats {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: repeat(2,minmax(0,1fr));
             gap: 22px;
-            margin-bottom: 42px;
+            margin-bottom: 46px;
         }
 
         .stat-card {
             display: flex;
             align-items: center;
             gap: 20px;
-
             background: var(--surface);
             padding: 28px;
-
             border: 1px solid var(--line);
             border-radius: 16px;
-
             box-shadow: var(--shadow);
-
-            transition:
-                transform .25s var(--ease),
-                box-shadow .25s var(--ease);
+            transition: transform .25s var(--ease), box-shadow .25s var(--ease);
         }
 
         .stat-card:hover {
@@ -288,13 +287,10 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
 
         .stat-card .icon {
             flex: none;
-
             display: grid;
             place-items: center;
-
             width: 58px;
             height: 58px;
-
             border-radius: 16px;
             background: var(--bg-soft);
             color: var(--rose-deep);
@@ -319,25 +315,20 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
             line-height: 1.1;
         }
 
-        /* =========================
-           ORDERS OVERVIEW
-        ========================= */
-
+        /* ORDERS OVERVIEW */
         .orders-overview {
             margin-bottom: 52px;
         }
 
         .orders-heading {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 22px;
+            margin-bottom: 30px;
         }
 
         .orders-heading h2 {
             font-family: var(--font-display);
-            font-size: 26px;
+            font-size: 28px;
             font-weight: 600;
+            margin-bottom: 5px;
         }
 
         .orders-heading p {
@@ -345,24 +336,54 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
             font-size: 14px;
         }
 
+        .order-group {
+            margin-bottom: 30px;
+        }
+
+        .order-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .group-heading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .group-heading h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .group-line {
+            flex: 1;
+            height: 1px;
+            background: var(--line);
+        }
+
+        /* ORDER CARDS */
         .order-stats {
             display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
+            grid-template-columns: repeat(3,minmax(0,1fr));
             gap: 18px;
         }
 
+        .order-stats.two-cards {
+            grid-template-columns: repeat(2,minmax(0,1fr));
+        }
+
         .order-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
             background: var(--surface);
             padding: 22px;
-
             border: 1px solid var(--line);
             border-radius: 14px;
-
             box-shadow: var(--shadow);
-
-            transition:
-                transform .25s var(--ease),
-                box-shadow .25s var(--ease);
+            transition: transform .25s var(--ease), box-shadow .25s var(--ease);
         }
 
         .order-card:hover {
@@ -371,29 +392,26 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
         }
 
         .order-card .order-icon {
-            width: 44px;
-            height: 44px;
-
+            flex: none;
+            width: 48px;
+            height: 48px;
             display: grid;
             place-items: center;
-
-            border-radius: 12px;
-            margin-bottom: 16px;
-
+            border-radius: 13px;
             background: var(--bg-soft);
             color: var(--rose-deep);
         }
 
         .order-card .order-icon svg {
-            width: 23px;
-            height: 23px;
+            width: 24px;
+            height: 24px;
         }
 
         .order-card h3 {
             font-size: 13px;
             font-weight: 500;
             color: var(--ink-soft);
-            margin-bottom: 7px;
+            margin-bottom: 5px;
         }
 
         .order-card p {
@@ -403,44 +421,83 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
             line-height: 1.1;
         }
 
-        /* =========================
-           MANAGEMENT SECTION
-        ========================= */
+        /* MANAGEMENT */
+        .management {
+            margin-top: 10px;
+        }
 
         .section-title {
             font-family: var(--font-display);
-            font-size: 26px;
+            font-size: 28px;
             font-weight: 600;
-            margin-bottom: 22px;
+            margin-bottom: 26px;
+        }
+
+        .management-group {
+            margin-bottom: 32px;
+        }
+
+        .management-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .management-heading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .management-heading h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .management-heading .heading-line {
+            flex: 1;
+            height: 1px;
+            background: var(--line);
         }
 
         .menu {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(2,minmax(0,1fr));
+            gap: 22px;
         }
 
         .menu-card {
             display: flex;
             flex-direction: column;
             align-items: flex-start;
-
             background: var(--surface);
             padding: 30px;
-
             border: 1px solid var(--line);
-            border-radius: 14px;
-
+            border-radius: 16px;
             box-shadow: var(--shadow);
-
-            transition:
-                transform .3s var(--ease),
-                box-shadow .3s var(--ease);
+            min-height: 230px;
+            transition: transform .3s var(--ease), box-shadow .3s var(--ease);
         }
 
         .menu-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-4px);
             box-shadow: var(--shadow-lift);
+        }
+
+        .menu-icon {
+            display: grid;
+            place-items: center;
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: var(--bg-soft);
+            color: var(--rose-deep);
+            margin-bottom: 18px;
+        }
+
+        .menu-icon svg {
+            width: 26px;
+            height: 26px;
         }
 
         .menu-card h3 {
@@ -454,24 +511,19 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
             color: var(--ink-soft);
             font-size: 15px;
             line-height: 1.65;
-            margin-bottom: 26px;
+            margin-bottom: 24px;
         }
 
         .menu-card a {
             margin-top: auto;
-
             display: inline-block;
-
             background: var(--rose-deep);
             color: #fff;
-
             padding: 12px 24px;
             border-radius: 999px;
-
             text-decoration: none;
             font-size: 14px;
             font-weight: 600;
-
             transition: background .2s var(--ease);
         }
 
@@ -479,17 +531,33 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
             background: var(--rose-darker);
         }
 
-        /* =========================
-           RESPONSIVE DESIGN
-        ========================= */
+        .payment-note {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-soft);
+            color: var(--rose-darker);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
 
-        @media (max-width: 1100px) {
+        .payment-note svg {
+            width: 17px;
+            height: 17px;
+            flex: none;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1000px) {
             .order-stats {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
+                grid-template-columns: repeat(2,minmax(0,1fr));
             }
 
             .menu {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+                grid-template-columns: repeat(2,minmax(0,1fr));
             }
         }
 
@@ -498,8 +566,9 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
                 grid-template-columns: 1fr;
             }
 
-            .order-stats {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+            .order-stats,
+            .order-stats.two-cards {
+                grid-template-columns: repeat(2,minmax(0,1fr));
             }
 
             header {
@@ -514,10 +583,15 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
             .container {
                 padding: 36px 6% 48px;
             }
+
+            .menu-card {
+                min-height: 220px;
+            }
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 520px) {
             .order-stats,
+            .order-stats.two-cards,
             .menu {
                 grid-template-columns: 1fr;
             }
@@ -543,6 +617,16 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
                 padding: 9px 12px;
                 font-size: 13px;
             }
+
+            .group-heading h3,
+            .management-heading h3 {
+                font-size: 15px;
+            }
+
+            .menu-card {
+                padding: 25px;
+                min-height: auto;
+            }
         }
 
         @media (max-width: 420px) {
@@ -555,7 +639,7 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
             *,
             *::before,
             *::after {
-                transition-duration: 0.01ms !important;
+                transition-duration: .01ms !important;
             }
         }
     </style>
@@ -569,15 +653,10 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
         <span class="badge">ADMIN</span>
     </div>
 
-    <!-- HEADER BUTTONS -->
     <div class="header-actions">
-        <a href="contact.php" class="contact-settings-btn">
-            Contact Settings
-        </a>
-
-        <a href="logout.php">
-            Logout
-        </a>
+        <a href="contact.php" class="contact-settings-btn">Contact Settings</a>
+        <a href="account_settings.php" class="account-settings-btn">Account Settings</a>
+        <a href="logout.php">Logout</a>
     </div>
 </header>
 
@@ -602,10 +681,9 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
                     <path d="M12 5.5c.9-.9.9-1.6 0-2.5-.9.9-.9 1.6 0 2.5z"/>
                 </svg>
             </div>
-
             <div>
                 <h3>Total cakes</h3>
-                <p><?php echo number_format((int)$total_cakes); ?></p>
+                <p><?php echo number_format($total_cakes); ?></p>
             </div>
         </div>
 
@@ -618,10 +696,9 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
                     <path d="M16 4.7a3.5 3.5 0 0 1 0 6.6M18 14.2a6.5 6.5 0 0 1 3.5 5.8"/>
                 </svg>
             </div>
-
             <div>
                 <h3>Total customers</h3>
-                <p><?php echo number_format((int)$total_customers); ?></p>
+                <p><?php echo number_format($total_customers); ?></p>
             </div>
         </div>
 
@@ -635,116 +712,247 @@ $total_pending_payments = $payment_query->fetch_assoc()["total"];
             <p>Regular orders and customized cake requests</p>
         </div>
 
-        <div class="order-stats">
+        <!-- ORDER SUMMARY -->
+        <div class="order-group">
 
-            <!-- TOTAL ORDERS -->
-            <div class="order-card">
-                <div class="order-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="5" y="4" width="14" height="17" rx="2"/>
-                        <path d="M9 4.5h6v2H9z"/>
-                        <path d="M9 12h6M9 16h4"/>
-                    </svg>
-                </div>
-
-                <h3>Total Orders</h3>
-                <p><?php echo number_format((int)$total_orders); ?></p>
+            <div class="group-heading">
+                <h3>Order Summary</h3>
+                <div class="group-line"></div>
             </div>
 
-            <!-- PENDING -->
-            <div class="order-card">
-                <div class="order-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="9"/>
-                        <path d="M12 7v5l3 2"/>
-                    </svg>
+            <div class="order-stats">
+
+                <!-- TOTAL ORDERS -->
+                <div class="order-card">
+                    <div class="order-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="5" y="4" width="14" height="17" rx="2"/>
+                            <path d="M9 4.5h6v2H9z"/>
+                            <path d="M9 12h6M9 16h4"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>Total Orders</h3>
+                        <p><?php echo number_format($total_orders); ?></p>
+                    </div>
                 </div>
 
-                <h3>Pending</h3>
-                <p><?php echo number_format((int)$total_pending); ?></p>
-            </div>
-
-            <!-- APPROVED -->
-            <div class="order-card">
-                <div class="order-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="9"/>
-                        <path d="m8 12 2.5 2.5L16 9"/>
-                    </svg>
+                <!-- PENDING -->
+                <div class="order-card">
+                    <div class="order-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9"/>
+                            <path d="M12 7v5l3 2"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>Pending</h3>
+                        <p><?php echo number_format($total_pending); ?></p>
+                    </div>
                 </div>
 
-                <h3>Approved</h3>
-                <p><?php echo number_format((int)$total_approved); ?></p>
-            </div>
-
-            <!-- COMPLETED -->
-            <div class="order-card">
-                <div class="order-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M5 12.5 9.5 17 19 7"/>
-                        <path d="M21 12a9 9 0 1 1-9-9"/>
-                    </svg>
+                <!-- APPROVED -->
+                <div class="order-card">
+                    <div class="order-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9"/>
+                            <path d="m8 12 2.5 2.5L16 9"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>Approved</h3>
+                        <p><?php echo number_format($total_approved); ?></p>
+                    </div>
                 </div>
 
-                <h3>Completed</h3>
-                <p><?php echo number_format((int)$total_completed); ?></p>
             </div>
-
-            <!-- CANCELLED -->
-            <div class="order-card">
-                <div class="order-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="9"/>
-                        <path d="m9 9 6 6m0-6-6 6"/>
-                    </svg>
-                </div>
-
-                <h3>Cancelled</h3>
-                <p><?php echo number_format((int)$total_cancelled); ?></p>
-            </div>
-
         </div>
+
+        <!-- IN PROGRESS -->
+        <div class="order-group">
+
+            <div class="group-heading">
+                <h3>In Progress</h3>
+                <div class="group-line"></div>
+            </div>
+
+            <div class="order-stats two-cards">
+
+                <!-- READY FOR PICKUP -->
+                <div class="order-card">
+                    <div class="order-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 7h18l-2 13H5L3 7z"/>
+                            <path d="M8 7V5a4 4 0 0 1 8 0v2"/>
+                            <path d="M9 13h6"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>Ready for Pickup</h3>
+                        <p><?php echo number_format($total_ready_pickup); ?></p>
+                    </div>
+                </div>
+
+                <!-- OUT FOR DELIVERY -->
+                <div class="order-card">
+                    <div class="order-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 5h11v12H3z"/>
+                            <path d="M14 9h4l3 4v4h-7z"/>
+                            <circle cx="7.5" cy="18" r="2"/>
+                            <circle cx="17.5" cy="18" r="2"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>Out for Delivery</h3>
+                        <p><?php echo number_format($total_out_delivery); ?></p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ORDER RESULTS -->
+        <div class="order-group">
+
+            <div class="group-heading">
+                <h3>Order Results</h3>
+                <div class="group-line"></div>
+            </div>
+
+            <div class="order-stats two-cards">
+
+                <!-- COMPLETED -->
+                <div class="order-card">
+                    <div class="order-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12.5 9.5 17 19 7"/>
+                            <path d="M21 12a9 9 0 1 1-9-9"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>Completed</h3>
+                        <p><?php echo number_format($total_completed); ?></p>
+                    </div>
+                </div>
+
+                <!-- CANCELLED -->
+                <div class="order-card">
+                    <div class="order-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9"/>
+                            <path d="m9 9 6 6m0-6-6 6"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>Cancelled</h3>
+                        <p><?php echo number_format($total_cancelled); ?></p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
     </div>
 
     <!-- MANAGEMENT -->
-    <h2 class="section-title">Management</h2>
+    <div class="management">
 
-    <div class="menu">
+        <h2 class="section-title">Management</h2>
 
-        <!-- MANAGE CAKES -->
-        <div class="menu-card">
-            <h3>Manage cakes</h3>
-            <p>Add, view, and manage the cakes available on your website.</p>
-            <a href="add_cake.php">Manage cakes</a>
+        <!-- WEBSITE MANAGEMENT -->
+        <div class="management-group">
+
+            <div class="management-heading">
+                <h3>Website Management</h3>
+                <div class="heading-line"></div>
+            </div>
+
+            <div class="menu">
+
+                <!-- MANAGE CAKES -->
+                <div class="menu-card">
+                    <div class="menu-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 20v-7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7"/>
+                            <path d="M4 16c1.5 1.2 3 1.2 4 0 1 1.2 3 1.2 4 0 1.2 1.2 3 1.2 4 0 .5.5 1 .8 2 .8"/>
+                            <path d="M12 11V8"/>
+                            <path d="M12 5.5c.9-.9.9-1.6 0-2.5-.9.9-.9 1.6 0 2.5z"/>
+                        </svg>
+                    </div>
+                    <h3>Manage Cakes</h3>
+                    <p>Add new cakes, update cake information, and manage the cakes available on your website.</p>
+                    <a href="manage_cakes.php">Manage cakes</a>
+                </div>
+
+                <!-- CUSTOMERS -->
+                <div class="menu-card">
+                    <div class="menu-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="9" cy="8" r="3.5"/>
+                            <path d="M2.5 20a6.5 6.5 0 0 1 13 0"/>
+                            <path d="M16 4.7a3.5 3.5 0 0 1 0 6.6M18 14.2a6.5 6.5 0 0 1 3.5 5.8"/>
+                        </svg>
+                    </div>
+                    <h3>View Customers</h3>
+                    <p>View customer accounts and information of users registered on CakeCraft.</p>
+                    <a href="customers.php">View customers</a>
+                </div>
+
+            </div>
         </div>
 
-        <!-- CUSTOMERS -->
-        <div class="menu-card">
-            <h3>View customers</h3>
-            <p>View the customers who have registered on CakeCraft.</p>
-            <a href="customers.php">View customers</a>
-        </div>
+        <!-- ORDER AND PAYMENT MANAGEMENT -->
+        <div class="management-group">
 
-        <!-- ORDERS -->
-        <div class="menu-card">
-            <h3>Manage orders</h3>
-            <p>View customer cake orders and their order information.</p>
-            <a href="orders.php">View orders</a>
-        </div>
+            <div class="management-heading">
+                <h3>Order &amp; Payment Management</h3>
+                <div class="heading-line"></div>
+            </div>
 
-        <!-- PAYMENT VERIFICATION -->
-        <div class="menu-card">
-            <h3>Payment Verification</h3>
-            <p>
-                Verify customer GCash payments and review submitted
-                payment receipts.
-                <br><br>
-                <strong>
-                    <?php echo number_format((int)$total_pending_payments); ?>
-                    payment(s) awaiting verification
-                </strong>
-            </p>
-            <a href="verify_payments.php">Verify payments</a>
+            <div class="menu">
+
+                <!-- MANAGE ORDERS -->
+                <div class="menu-card">
+                    <div class="menu-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="5" y="4" width="14" height="17" rx="2"/>
+                            <path d="M9 4.5h6v2H9z"/>
+                            <path d="M9 12h6M9 16h4"/>
+                        </svg>
+                    </div>
+                    <h3>Manage Orders</h3>
+                    <p>View regular orders and customized cake requests. Manage order details, delivery information, and order status.</p>
+                    <a href="orders.php">View orders</a>
+                </div>
+
+                <!-- PAYMENT VERIFICATION -->
+                <div class="menu-card">
+                    <div class="menu-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="5" width="18" height="14" rx="2"/>
+                            <path d="M3 10h18"/>
+                            <path d="M7 15h4"/>
+                        </svg>
+                    </div>
+                    <h3>Payment Verification</h3>
+                    <p>Review GCash payment receipts, verify customer payments, and manage payment verification status.</p>
+
+                    <?php if ($total_pending_payments > 0): ?>
+                        <div class="payment-note">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="9"/>
+                                <path d="M12 8v4"/>
+                                <path d="M12 16h.01"/>
+                            </svg>
+                            <?php echo number_format($total_pending_payments); ?> payment(s) awaiting verification
+                        </div>
+                    <?php endif; ?>
+
+                    <a href="verify_payments.php">Verify payments</a>
+                </div>
+
+            </div>
         </div>
 
     </div>

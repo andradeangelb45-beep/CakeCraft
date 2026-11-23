@@ -4,7 +4,7 @@ require_once "database.php";
 
 // Get updated admin contact details
 $admin_query = $conn->query(
-    "SELECT contact_name, email, contact_number
+    "SELECT contact_name, email, contact_number, location
      FROM site_contact
      WHERE id = 1
      LIMIT 1"
@@ -142,7 +142,9 @@ function categoryLoginLink($category) {
             background: #f7eeea !important;
         }
 
-        /* Cake Categories */
+        /* ==========================================
+           CAKE CATEGORIES
+        ========================================== */
 
         .cakes-section {
             padding: 85px 8%;
@@ -283,9 +285,121 @@ function categoryLoginLink($category) {
             border-radius: 10px;
         }
 
-        /* Tablet */
+        /* ==========================================
+           CONTACT US CARD
+        ========================================== */
+
+        .contact-details {
+            width: 420px;
+            max-width: 100%;
+            margin: 30px auto;
+            padding: 28px 30px;
+            background: #ffffff;
+            border: 1px solid #efe0da;
+            border-radius: 18px;
+            box-shadow: 0 8px 28px rgba(74, 45, 36, 0.07);
+            box-sizing: border-box;
+            text-align: left;
+        }
+
+        .contact-details h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 23px;
+            color: #3b2724;
+            margin: 0 0 22px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #efe0da;
+        }
+
+        .contact-details p {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin: 0 0 16px;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #6f5d57;
+        }
+
+        .contact-details p:last-child {
+            margin-bottom: 0;
+        }
+
+        .contact-details strong {
+            color: #3b2724;
+            font-weight: 600;
+        }
+
+        .contact-details a {
+            color: #a65a56;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .contact-details a:hover {
+            color: #8c4845;
+            text-decoration: underline;
+        }
+
+        /* Contact icons */
+
+        .contact-icon {
+            width: 30px;
+            height: 30px;
+            min-width: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f7eeea;
+            color: #a65a56;
+            border-radius: 50%;
+            font-size: 14px;
+            margin-top: 1px;
+        }
+
+        /* Location */
+
+        .contact-location {
+            align-items: flex-start !important;
+        }
+
+        .contact-location .location-icon {
+            width: 30px;
+            height: 30px;
+            min-width: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f7eeea;
+            border-radius: 50%;
+            margin-top: 1px;
+            font-size: 14px;
+        }
+
+        .contact-location .location-content {
+            flex: 1;
+        }
+
+        .contact-location .maps-link {
+            display: inline-block;
+            margin-top: 5px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Footer copyright */
+
+        .footer-copyright {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        /* ==========================================
+           TABLET
+        ========================================== */
 
         @media (max-width: 950px) {
+
             .cake-container {
                 grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
                 gap: 22px !important;
@@ -297,9 +411,12 @@ function categoryLoginLink($category) {
             }
         }
 
-        /* Mobile */
+        /* ==========================================
+           MOBILE
+        ========================================== */
 
         @media (max-width: 600px) {
+
             .cakes-section {
                 padding: 60px 5%;
             }
@@ -328,6 +445,31 @@ function categoryLoginLink($category) {
 
             .cake-info p {
                 min-height: unset;
+            }
+
+            .contact-details {
+                width: 100%;
+                padding: 23px 20px;
+                margin: 25px 0;
+                border-radius: 15px;
+            }
+
+            .contact-details h3 {
+                font-size: 21px;
+                margin-bottom: 18px;
+            }
+
+            .contact-details p {
+                font-size: 13px;
+                gap: 9px;
+                margin-bottom: 14px;
+            }
+
+            .contact-icon,
+            .contact-location .location-icon {
+                width: 28px;
+                height: 28px;
+                min-width: 28px;
             }
         }
     </style>
@@ -754,27 +896,71 @@ function categoryLoginLink($category) {
 
             <?php if ($admin): ?>
 
+                <!-- CONTACT PERSON -->
                 <p>
-                    <strong>Contact Person:</strong>
-                    <?php echo htmlspecialchars($admin["contact_name"]); ?>
+                    <span class="contact-icon" aria-hidden="true">♙</span>
+
+                    <span>
+                        <strong>Contact Person:</strong>
+                        <?php echo htmlspecialchars($admin["contact_name"]); ?>
+                    </span>
                 </p>
 
+                <!-- EMAIL -->
                 <p>
-                    <strong>Email:</strong>
+                    <span class="contact-icon" aria-hidden="true">✉</span>
 
-                    <a href="mailto:<?php echo htmlspecialchars($admin["email"]); ?>">
-                        <?php echo htmlspecialchars($admin["email"]); ?>
-                    </a>
+                    <span>
+                        <strong>Email:</strong>
+
+                        <a href="mailto:<?php echo htmlspecialchars($admin["email"]); ?>">
+                            <?php echo htmlspecialchars($admin["email"]); ?>
+                        </a>
+                    </span>
                 </p>
 
+                <!-- CONTACT NUMBER -->
                 <?php if (!empty($admin["contact_number"])): ?>
 
                     <p>
-                        <strong>Contact Number:</strong>
+                        <span class="contact-icon" aria-hidden="true">☎</span>
 
-                        <a href="tel:<?php echo htmlspecialchars($admin["contact_number"]); ?>">
-                            <?php echo htmlspecialchars($admin["contact_number"]); ?>
-                        </a>
+                        <span>
+                            <strong>Contact Number:</strong>
+
+                            <a href="tel:<?php echo htmlspecialchars($admin["contact_number"]); ?>">
+                                <?php echo htmlspecialchars($admin["contact_number"]); ?>
+                            </a>
+                        </span>
+                    </p>
+
+                <?php endif; ?>
+
+                <!-- LOCATION -->
+                <?php if (!empty($admin["location"])): ?>
+
+                    <p class="contact-location">
+
+                        <span class="location-icon" aria-hidden="true">📍</span>
+
+                        <span class="location-content">
+
+                            <strong>Location:</strong>
+                            <?php echo htmlspecialchars($admin["location"]); ?>
+
+                            <br>
+
+                            <a
+                                class="maps-link"
+                                href="https://www.google.com/maps/search/?api=1&query=<?php echo urlencode($admin["location"]); ?>"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                View on Google Maps →
+                            </a>
+
+                        </span>
+
                     </p>
 
                 <?php endif; ?>
@@ -789,7 +975,7 @@ function categoryLoginLink($category) {
 
         </div>
 
-        <p>
+        <p class="footer-copyright">
             &copy; <?php echo date("Y"); ?> CakeCraft. All Rights Reserved.
         </p>
 
