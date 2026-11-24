@@ -48,15 +48,24 @@ if (!in_array($selected_category, $categories, true)) {
     $selected_category = "";
 }
 
-// Get available cakes (optionally filtered by category)
+// ==========================================
+// GET AVAILABLE CAKES
+// EXCLUDE ARCHIVED CAKES
+// ==========================================
+
 if ($selected_category !== "") {
 
     $stmt = $conn->prepare("
         SELECT *
         FROM cake_options
         WHERE category = ?
+        AND archived_at IS NULL
         ORDER BY id DESC
     ");
+
+    if (!$stmt) {
+        die("Error preparing cake query: " . $conn->error);
+    }
 
     $stmt->bind_param("s", $selected_category);
     $stmt->execute();
@@ -65,7 +74,13 @@ if ($selected_category !== "") {
 
 } else {
 
-    $sql = "SELECT * FROM cake_options ORDER BY id DESC";
+    $sql = "
+        SELECT *
+        FROM cake_options
+        WHERE archived_at IS NULL
+        ORDER BY id DESC
+    ";
+
     $result = $conn->query($sql);
 
 }

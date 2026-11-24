@@ -220,7 +220,6 @@ $total_pending_payments = (int)$payment_query->fetch_assoc()["total"];
             border-color: var(--rose-darker);
         }
 
-        /* ACCOUNT SETTINGS */
         .account-settings-btn {
             background: rgba(255,255,255,.12);
             border-color: rgba(255,255,255,.55);
@@ -676,7 +675,7 @@ $total_pending_payments = (int)$payment_query->fetch_assoc()["total"];
             <div class="icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M4 20v-7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7"/>
-                    <path d="M4 16c1.5 1.2 3 1.2 4 0 1 1.2 3 1.2 4 0 1.2 1.2 3 1.2 4 0 .5.5 1 .8 2 .8"/>
+                    <path d="M4 16c1.5 1.2 3 1.2 4 0 1 1.2 3 1.2 4 0 1.2 1.2 3 0 4 0 .5.5 1 .8 2 .8"/>
                     <path d="M12 11V8"/>
                     <path d="M12 5.5c.9-.9.9-1.6 0-2.5-.9.9-.9 1.6 0 2.5z"/>
                 </svg>
@@ -875,7 +874,7 @@ $total_pending_payments = (int)$payment_query->fetch_assoc()["total"];
                     <div class="menu-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M4 20v-7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7"/>
-                            <path d="M4 16c1.5 1.2 3 1.2 4 0 1 1.2 3 1.2 4 0 1.2 1.2 3 1.2 4 0 .5.5 1 .8 2 .8"/>
+                            <path d="M4 16c1.5 1.2 3 1.2 4 0 1 1.2 3 1.2 4 0 1.2 1.2 3 0 4 0 .5.5 1 .8 2 .8"/>
                             <path d="M12 11V8"/>
                             <path d="M12 5.5c.9-.9.9-1.6 0-2.5-.9.9-.9 1.6 0 2.5z"/>
                         </svg>
@@ -924,6 +923,21 @@ $total_pending_payments = (int)$payment_query->fetch_assoc()["total"];
                     <h3>Manage Orders</h3>
                     <p>View regular orders and customized cake requests. Manage order details, delivery information, and order status.</p>
                     <a href="orders.php">View orders</a>
+                </div>
+
+                <!-- GCASH QR SETTINGS -->
+                <div class="menu-card">
+                    <div class="menu-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <path d="M7 7h4v4H7z"/>
+                            <path d="M16 7h1M16 10h1M7 16h4v1H7z"/>
+                            <path d="M16 15v2M19 15v2"/>
+                        </svg>
+                    </div>
+                    <h3>GCash QR Settings</h3>
+                    <p>Upload, preview, and replace the GCash QR code displayed on the customer payment page.</p>
+                    <a href="payment_settings.php">Manage GCash QR</a>
                 </div>
 
                 <!-- PAYMENT VERIFICATION -->

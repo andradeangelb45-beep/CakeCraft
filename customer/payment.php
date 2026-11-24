@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 require_once "../database.php";
@@ -28,6 +29,34 @@ $amount = 0;
 $description = "";
 $payment_status = "Unpaid";
 $can_submit = false;
+
+/* ==========================================
+   GET ADMIN GCash QR CODE
+========================================== */
+
+$gcash_qr_image = null;
+
+$stmt = $conn->prepare("
+    SELECT gcash_qr_image, updated_at
+    FROM payment_settings
+    WHERE id = 1
+    LIMIT 1
+");
+
+$stmt->execute();
+
+$qr_result = $stmt->get_result();
+$qr_settings = $qr_result->fetch_assoc();
+
+$stmt->close();
+
+if (!empty($qr_settings["gcash_qr_image"])) {
+
+    $gcash_qr_image = "../" . $qr_settings["gcash_qr_image"];
+
+    // Refresh browser cache whenever the QR is replaced
+    $gcash_qr_image .= "?v=" . strtotime($qr_settings["updated_at"]);
+}
 
 /* ==========================================
    GET ORDER INFORMATION
@@ -636,7 +665,7 @@ header a {
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 30px;
+    padding: 20px;
 }
 
 .qr-placeholder-inner {
@@ -666,6 +695,15 @@ header a {
 .qr-placeholder p {
     color: var(--ink-soft);
     font-size: 13px;
+}
+
+.qr-image {
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    max-height: 400px;
+    object-fit: contain;
+    border-radius: 12px;
 }
 
 .instructions {
@@ -917,30 +955,45 @@ header a {
 
     </div>
 
-    <!-- QR PLACEHOLDER -->
+    <!-- GCash QR CODE -->
 
     <div class="card">
 
         <h2>Pay using GCash</h2>
 
-        <div class="qr-placeholder">
+        <?php if (!empty($gcash_qr_image)): ?>
 
-            <div class="qr-placeholder-inner">
+            <div class="qr-placeholder">
 
-                <div class="qr-icon">
-                    ₱
-                </div>
-
-                <strong>GCash QR Placeholder</strong>
-
-                <p>
-                    Your actual GCash QR code<br>
-                    will be displayed here.
-                </p>
+                <img
+                    src="<?php echo htmlspecialchars($gcash_qr_image); ?>"
+                    alt="CakeCraft GCash QR Code"
+                    class="qr-image">
 
             </div>
 
-        </div>
+        <?php else: ?>
+
+            <div class="qr-placeholder">
+
+                <div class="qr-placeholder-inner">
+
+                    <div class="qr-icon">
+                        ₱
+                    </div>
+
+                    <strong>GCash QR Not Available</strong>
+
+                    <p>
+                        The GCash QR code has not been uploaded yet.
+                        Please contact the admin for payment instructions.
+                    </p>
+
+                </div>
+
+            </div>
+
+        <?php endif; ?>
 
         <ol class="instructions">
 

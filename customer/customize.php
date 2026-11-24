@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 require_once "../database.php";
@@ -18,10 +17,11 @@ if ($cake_id <= 0) {
 }
 
 // Get cake information including category
+// Exclude archived cakes
 $stmt = $conn->prepare(
     "SELECT id, cake_name, category, description, image
      FROM cake_options
-     WHERE id = ?"
+     WHERE id = ? AND archived_at IS NULL"
 );
 
 $stmt->bind_param("i", $cake_id);

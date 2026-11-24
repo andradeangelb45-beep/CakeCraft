@@ -11,68 +11,64 @@ if (!isset($_SESSION["admin_id"])) {
 $message = "";
 $message_type = "";
 
-// Delete cake
+// ==========================================
+// ARCHIVE CAKE (SOFT DELETE)
+// ==========================================
+
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["delete_cake"])) {
 
     $cake_id = (int) $_POST["cake_id"];
 
-    // Check if cake has existing orders
-    $check = $conn->prepare(
-        "SELECT COUNT(*) AS total FROM orders WHERE cake_id = ?"
-    );
-    $check->bind_param("i", $cake_id);
-    $check->execute();
-
-    $order_count = $check->get_result()->fetch_assoc()["total"];
-    $check->close();
-
-    if ($order_count > 0) {
-        $message = "This cake cannot be deleted because it already has customer orders.";
+    if ($cake_id <= 0) {
+        $message = "Invalid cake selected.";
         $message_type = "error";
 
     } else {
 
         try {
-            $conn->begin_transaction();
-
-            $delete_sizes = $conn->prepare(
-                "DELETE FROM cake_sizes WHERE cake_id = ?"
+            // Instead of permanently deleting the cake,
+            // set archived_at to the current date and time.
+            $archive_cake = $conn->prepare(
+                "UPDATE cake_options
+                 SET archived_at = NOW()
+                 WHERE id = ? AND archived_at IS NULL"
             );
-            $delete_sizes->bind_param("i", $cake_id);
-            $delete_sizes->execute();
-            $delete_sizes->close();
 
-            $delete_cake = $conn->prepare(
-                "DELETE FROM cake_options WHERE id = ?"
-            );
-            $delete_cake->bind_param("i", $cake_id);
-            $delete_cake->execute();
+            $archive_cake->bind_param("i", $cake_id);
+            $archive_cake->execute();
 
-            if ($delete_cake->affected_rows > 0) {
-                $conn->commit();
-                $message = "Cake successfully deleted.";
+            if ($archive_cake->affected_rows > 0) {
+                $message = "Cake successfully moved to Archived Cakes.";
                 $message_type = "success";
             } else {
-                $conn->rollback();
-                $message = "Unable to delete cake.";
+                $message = "Unable to archive cake. It may already be archived or does not exist.";
                 $message_type = "error";
             }
 
-            $delete_cake->close();
+            $archive_cake->close();
 
         } catch (Exception $e) {
-            $conn->rollback();
-            $message = "Unable to delete cake. Please try again.";
+            $message = "Unable to archive cake. Please try again.";
             $message_type = "error";
         }
     }
 }
 
-// Get all cakes
-$sql = "SELECT * FROM cake_options ORDER BY id DESC";
+// ==========================================
+// GET ACTIVE CAKES ONLY
+// ==========================================
+
+$sql = "SELECT *
+        FROM cake_options
+        WHERE archived_at IS NULL
+        ORDER BY id DESC";
+
 $result = $conn->query($sql);
 
-// Get all sizes in one query
+// ==========================================
+// GET ALL SIZES IN ONE QUERY
+// ==========================================
+
 $all_sizes = [];
 
 if ($result && $result->num_rows > 0) {
@@ -83,8 +79,10 @@ if ($result && $result->num_rows > 0) {
          ORDER BY id ASC"
     );
 
-    while ($size = $size_result->fetch_assoc()) {
-        $all_sizes[$size["cake_id"]][] = $size;
+    if ($size_result) {
+        while ($size = $size_result->fetch_assoc()) {
+            $all_sizes[$size["cake_id"]][] = $size;
+        }
     }
 }
 ?>
@@ -180,6 +178,9 @@ if ($result && $result->num_rows > 0) {
         .top-actions {
             display: flex;
             justify-content: flex-end;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
             margin-bottom: 25px;
         }
 
@@ -191,10 +192,26 @@ if ($result && $result->num_rows > 0) {
             text-decoration: none;
             font-size: 14px;
             font-weight: 600;
+            transition: background 0.3s ease;
         }
 
         .add-button:hover {
             background: #8c4845;
+        }
+
+        .archive-button {
+            background: #70452f;
+            color: white;
+            padding: 12px 22px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+
+        .archive-button:hover {
+            background: #523222;
         }
 
         .cake-grid {
@@ -340,6 +357,10 @@ if ($result && $result->num_rows > 0) {
             h1 {
                 font-size: 29px;
             }
+
+            .top-actions {
+                justify-content: flex-start;
+            }
         }
     </style>
 </head>
@@ -368,7 +389,15 @@ if ($result && $result->num_rows > 0) {
     <?php endif; ?>
 
     <div class="top-actions">
-        <a href="add_cake.php" class="add-button">+ Add New Cake</a>
+
+        <a href="archived_cakes.php" class="archive-button">
+            ♲ Archived Cakes
+        </a>
+
+        <a href="add_cake.php" class="add-button">
+            + Add New Cake
+        </a>
+
     </div>
 
     <?php if ($result && $result->num_rows > 0): ?>
@@ -438,7 +467,7 @@ if ($result && $result->num_rows > 0) {
                             </a>
 
                             <form method="POST"
-                                  onsubmit="return confirm('Are you sure you want to delete this cake?');">
+                                  onsubmit="return confirm('Are you sure you want to move this cake to Archived Cakes?');">
 
                                 <input
                                     type="hidden"
@@ -450,7 +479,7 @@ if ($result && $result->num_rows > 0) {
                                     type="submit"
                                     name="delete_cake"
                                     class="delete-button">
-                                    Delete Cake
+                                    Archive Cake
                                 </button>
 
                             </form>
@@ -467,8 +496,8 @@ if ($result && $result->num_rows > 0) {
     <?php else: ?>
 
         <div class="empty">
-            <h2>No Cakes Available</h2>
-            <p>Click "Add New Cake" to add your first cake.</p>
+            <h2>No Active Cakes Available</h2>
+            <p>Click "Add New Cake" to add a new cake or visit Archived Cakes to restore an existing one.</p>
         </div>
 
     <?php endif; ?>

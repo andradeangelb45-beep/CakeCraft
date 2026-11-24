@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 require_once "../database.php";
@@ -35,11 +36,12 @@ if (!$customer) {
     exit("Customer account not found.");
 }
 
-// Get cake information including category
+// Get cake information
+// Only allow active (non-archived) cakes
 $stmt = $conn->prepare(
     "SELECT id, cake_name, category, description, image
      FROM cake_options
-     WHERE id = ?"
+     WHERE id = ? AND archived_at IS NULL"
 );
 
 $stmt->bind_param("i", $cake_id);
@@ -48,8 +50,10 @@ $stmt->execute();
 $cake = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
+// Redirect if cake does not exist or is archived
 if (!$cake) {
-    exit("Cake not found.");
+    header("Location: cakes.php");
+    exit();
 }
 
 // Get selected size and price
