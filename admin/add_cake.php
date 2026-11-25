@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 require_once "../database.php";
@@ -28,7 +27,6 @@ foreach ([6, 8, 10] as $diameter) {
     }
 }
 
-// Dedicated Bento Cake sizes (single layer only)
 $bento_option_names = [
     "4 inches - 1 Layer",
     "5 inches - 1 Layer"
@@ -257,31 +255,44 @@ $old_option_prices = (
 :root {
     --bg: #fffaf7;
     --bg-soft: #f7eeea;
-    --surface: #fff;
+    --bg-tint: #f4e5df;
+    --surface: #ffffff;
     --ink: #3b2724;
     --ink-soft: #6f5d57;
+    --soft: #6f5d57;
     --rose: #c47c78;
     --rose-deep: #a65a56;
     --rose-dark: #8c4845;
-    --line: #e6d3cc;
-    --font-body: 'DM Sans', system-ui, sans-serif;
-    --font-display: 'Playfair Display', Georgia, serif;
+    --rose-darker: #8c4845;
+    --craft-color: #a65a56;
+    --line: #efe0da;
+    --display: 'Playfair Display', Georgia, serif;
+    --body: 'DM Sans', system-ui, sans-serif;
+    --shadow: 0 8px 24px rgba(59, 39, 36, 0.07);
+    --shadow-lift: 0 12px 28px rgba(59, 39, 36, 0.11);
 }
 
-* {
+*, *::before, *::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
 body {
-    font-family: var(--font-body);
+    font-family: var(--body);
     line-height: 1.6;
     background: var(--bg);
     color: var(--ink);
     min-height: 100vh;
 }
 
+:focus-visible {
+    outline: 3px solid var(--rose);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+/* HEADER */
 header {
     position: sticky;
     top: 0;
@@ -289,9 +300,11 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 6%;
-    background: var(--ink);
-    color: #fff;
+    padding: 14px 6%;
+    background: var(--bg);
+    color: var(--ink);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 2px 14px rgba(59, 39, 36, 0.05);
 }
 
 .brand {
@@ -300,121 +313,214 @@ header {
     gap: 12px;
 }
 
-.brand h2 {
-    font-family: var(--font-display);
-    font-size: 26px;
+.brand-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    line-height: 1;
 }
 
-.brand h2 span {
-    color: #e3a9a5;
+.brand-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    color: var(--craft-color);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.brand-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.brand h2 {
+    font-family: var(--display);
+    font-size: 25px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--ink);
+}
+
+.brand h2 span.brand-craft {
+    color: var(--craft-color);
 }
 
 .badge {
-    padding: 3px 11px;
+    padding: 4px 10px;
     border-radius: 999px;
-    background: #ffffff24;
-    font-size: 12px;
-    font-weight: 600;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    color: var(--rose-deep);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
 }
 
 header a {
-    color: #fff;
+    color: var(--ink);
     text-decoration: none;
     padding: 9px 20px;
-    border: 1px solid #ffffff73;
+    border: 1.5px solid var(--rose);
     border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    transition: 0.2s ease;
 }
 
+header a:hover {
+    background: var(--bg-soft);
+    border-color: var(--rose-deep);
+    color: var(--rose-deep);
+}
+
+/* PAGE */
 .container {
-    max-width: 760px;
+    max-width: 800px;
     margin: auto;
-    padding: 42px 24px 70px;
+    padding: 38px 20px 70px;
 }
 
 .back {
-    display: inline-block;
-    margin-bottom: 22px;
+    display: inline-flex;
+    margin-bottom: 24px;
     color: var(--rose-deep);
     text-decoration: none;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 700;
+    transition: 0.2s ease;
+}
+
+.back:hover {
+    color: var(--rose-dark);
+    transform: translateX(-3px);
 }
 
 h1 {
-    font-family: var(--font-display);
-    font-size: clamp(1.9rem, 4vw, 2.5rem);
+    font-family: var(--display);
+    font-size: 36px;
     line-height: 1.2;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+    color: var(--ink);
 }
 
 .subtitle {
     color: var(--ink-soft);
-    font-size: 16px;
-    margin-bottom: 28px;
+    font-size: 14px;
+    margin-bottom: 26px;
 }
 
+/* FORM */
 form {
-    background: #fff;
-    padding: 34px;
+    background: var(--surface);
+    padding: 32px;
     border: 1px solid var(--line);
     border-radius: 18px;
-    box-shadow: 0 14px 40px #49302d14;
+    box-shadow: var(--shadow);
 }
 
 .form-group {
-    margin-bottom: 21px;
+    margin-bottom: 22px;
 }
 
 label,
 .label {
     display: block;
-    margin-bottom: 7px;
+    margin-bottom: 8px;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--ink);
 }
 
-input[type=text],
-input[type=number],
-input[type=file],
+input[type="text"],
+input[type="number"],
+input[type="file"],
 textarea,
 select {
     width: 100%;
     padding: 12px 14px;
-    font: inherit;
-    font-size: 15px;
+    font-family: var(--body);
+    font-size: 14px;
     color: var(--ink);
     background: var(--bg);
-    border: 1.5px solid var(--line);
+    border: 1px solid var(--line);
     border-radius: 10px;
+    outline: none;
+    transition: 0.2s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--rose-deep);
+    background: var(--surface);
+    box-shadow: 0 0 0 3px rgba(196, 124, 120, 0.16);
 }
 
 textarea {
-    min-height: 115px;
+    min-height: 110px;
     resize: vertical;
 }
 
+input[type="file"] {
+    padding: 10px;
+    background: var(--bg);
+    cursor: pointer;
+}
+
+input[type="file"]::file-selector-button {
+    border: none;
+    background: var(--rose);
+    color: white;
+    padding: 8px 13px;
+    margin-right: 12px;
+    border-radius: 7px;
+    font-family: var(--body);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+input[type="file"]::file-selector-button:hover {
+    background: var(--rose-deep);
+}
+
 .hint {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--ink-soft);
     margin-top: 5px;
 }
 
+/* OPTIONS */
 .section-title {
-    font: 600 22px var(--font-display);
-    margin: 26px 0 8px;
+    font: 600 23px var(--display);
+    margin: 28px 0 8px;
+    padding-top: 23px;
+    border-top: 1px solid var(--line);
 }
 
 .options-note {
     font-size: 13px;
     color: var(--ink-soft);
-    margin-bottom: 15px;
+    margin-bottom: 17px;
 }
 
 .size-card {
     border: 1px solid var(--line);
-    border-radius: 13px;
-    padding: 16px;
-    margin-bottom: 13px;
-    background: #fff;
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 14px;
+    background: var(--bg);
+    transition: 0.2s ease;
+}
+
+.size-card:hover {
+    border-color: #dfc2bc;
+    box-shadow: 0 5px 15px rgba(59, 39, 36, 0.04);
 }
 
 .size-heading {
@@ -422,58 +528,65 @@ textarea {
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 }
 
 .size-heading h3 {
-    font: 600 18px var(--font-display);
+    font: 600 18px var(--display);
+    color: var(--ink);
 }
 
 .size-sub {
-    font-size: 12px;
-    color: var(--ink-soft);
+    font-size: 11px;
+    color: var(--rose-deep);
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    padding: 5px 10px;
+    border-radius: 20px;
 }
 
 .layer-options {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 9px;
+    gap: 10px;
 }
 
 .layer-choice {
     border: 1px solid var(--line);
-    background: var(--bg);
-    border-radius: 10px;
-    padding: 10px;
+    background: var(--surface);
+    border-radius: 11px;
+    padding: 12px;
     min-width: 0;
+    transition: 0.2s ease;
+}
+
+.layer-choice.selected {
+    border-color: var(--rose-deep);
+    background: var(--bg-soft);
 }
 
 .layer-choice label {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
     margin: 0;
     font-size: 13px;
     cursor: pointer;
 }
 
-.layer-choice input[type=checkbox] {
+.layer-choice input[type="checkbox"] {
+    width: auto;
     accent-color: var(--rose-deep);
+    cursor: pointer;
 }
 
 .layer-price {
-    margin-top: 9px;
+    margin-top: 10px;
     display: none;
 }
 
 .layer-choice.selected .layer-price {
     display: block;
-}
-
-.layer-price input {
-    width: 100%;
-    padding: 9px 10px 9px 27px;
-    font-size: 14px;
 }
 
 .price-wrap {
@@ -482,39 +595,66 @@ textarea {
 
 .price-wrap span {
     position: absolute;
-    left: 10px;
-    top: 8px;
+    left: 11px;
+    top: 9px;
     color: var(--ink-soft);
-    font-weight: 600;
-    font-size: 14px;
+    font-weight: 700;
+    font-size: 13px;
 }
 
+.price-wrap input {
+    padding: 9px 10px 9px 29px;
+    font-size: 13px;
+}
+
+/* CUPCAKES */
 .cupcake-row {
     display: grid;
     grid-template-columns: 1.2fr 1fr;
     gap: 12px;
-    align-items: end;
+    align-items: center;
     margin-bottom: 12px;
+    padding: 13px;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: var(--bg);
 }
 
 .cupcake-row label {
+    display: flex;
+    align-items: center;
+    margin: 0;
     font-size: 13px;
+    cursor: pointer;
 }
 
+.cupcake-row input[type="checkbox"] {
+    width: auto;
+    margin-right: 9px;
+    accent-color: var(--rose-deep);
+}
+
+/* IMAGE UPLOAD */
 .dropzone {
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 7px;
-    min-height: 155px;
+    gap: 10px;
+    min-height: 165px;
     padding: 22px;
     text-align: center;
     background: var(--bg);
     border: 2px dashed var(--rose);
     border-radius: 14px;
     overflow: hidden;
+    transition: 0.2s ease;
+}
+
+.dropzone:hover {
+    border-color: var(--rose-deep);
+    background: var(--bg-soft);
 }
 
 .dropzone input {
@@ -526,6 +666,7 @@ textarea {
     max-width: 100%;
     max-height: 180px;
     object-fit: contain;
+    border-radius: 10px;
 }
 
 .dropzone.has-image img {
@@ -536,49 +677,84 @@ textarea {
     display: none;
 }
 
+/* BUTTON */
 .primary {
     width: 100%;
-    margin-top: 8px;
+    margin-top: 10px;
     padding: 14px 24px;
-    font: 600 16px var(--font-body);
+    font-family: var(--body);
+    font-size: 14px;
+    font-weight: 700;
     color: white;
-    background: var(--rose-deep);
+    background: var(--rose);
     border: 0;
     border-radius: 999px;
     cursor: pointer;
+    box-shadow: 0 5px 13px rgba(166, 90, 86, 0.18);
+    transition: 0.2s ease;
 }
 
 .primary:hover {
-    background: var(--rose-dark);
+    background: var(--rose-deep);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lift);
 }
 
+/* MESSAGES */
 .message {
-    padding: 13px 15px;
+    padding: 13px 16px;
     margin-bottom: 20px;
     border-radius: 10px;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .success {
-    background: #e8f6ec;
-    color: #17602f;
-    border: 1px solid #bfe3cb;
+    background: #edf5ed;
+    color: #426c4e;
+    border: 1px solid #d7e8d8;
 }
 
 .error {
-    background: #fdecea;
-    color: #9b1c1c;
-    border: 1px solid #f3c7c2;
+    background: #f9e9e7;
+    color: #963f3b;
+    border: 1px solid #efd1cd;
 }
 
 .hidden {
     display: none;
 }
 
-@media(max-width:600px) {
+/* RESPONSIVE */
+@media (max-width: 600px) {
+
+    header {
+        padding: 14px 5%;
+    }
+
+    .brand {
+        gap: 8px;
+    }
+
+    .brand h2 {
+        font-size: 21px;
+    }
+
+    header a {
+        padding: 8px 14px;
+        font-size: 12px;
+    }
+
+    .container {
+        padding: 28px 15px 50px;
+    }
+
+    h1 {
+        font-size: 30px;
+    }
 
     form {
-        padding: 24px 18px;
+        padding: 20px;
+        border-radius: 14px;
     }
 
     .layer-options {
@@ -587,7 +763,12 @@ textarea {
 
     .cupcake-row {
         grid-template-columns: 1fr;
-        gap: 7px;
+        gap: 10px;
+    }
+
+    .size-heading {
+        align-items: flex-start;
+        flex-direction: column;
     }
 }
 
@@ -600,7 +781,18 @@ textarea {
 <header>
 
     <div class="brand">
-        <h2>Cake<span>Craft</span></h2>
+        <div class="brand-mark">
+            <span class="brand-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3v3" />
+                    <path d="M12 6c-1.1 0-2 .7-2 1.6 0 .5.2.9.5 1.4" />
+                    <path d="M5 12h14a2 2 0 0 1 2 2v5H3v-5a2 2 0 0 1 2-2Z" />
+                    <path d="M3 16c1.5 0 2.5-1 4-1s2.5 1 4 1 2.5-1 4-1 2.5 1 4 1 2-.5 2-1" />
+                    <path d="M3 19h18" />
+                </svg>
+            </span>
+            <h2>Cake<span class="brand-craft">Craft</span></h2>
+        </div>
         <span class="badge">ADMIN</span>
     </div>
 
@@ -614,7 +806,7 @@ textarea {
         &larr; Back to Manage Cakes
     </a>
 
-    <h1>Add new cake</h1>
+    <h1>Add New Cake</h1>
 
     <p class="subtitle">
         Enter the cake details and choose only the sizes and layers available for this cake.
@@ -635,7 +827,7 @@ textarea {
 
         <div class="form-group">
 
-            <label for="cake_name">Cake name</label>
+            <label for="cake_name">Cake Name</label>
 
             <input
                 type="text"
@@ -649,7 +841,7 @@ textarea {
 
         <div class="form-group">
 
-            <label for="category">Cake category</label>
+            <label for="category">Cake Category</label>
 
             <select id="category" name="category" required>
 
@@ -684,7 +876,7 @@ textarea {
         </div>
 
         <h2 class="section-title">
-            Available sizes, layers & prices
+            Available Sizes, Layers & Prices
         </h2>
 
         <p class="options-note" id="option-help">
@@ -695,13 +887,13 @@ textarea {
 
         <div class="form-group">
 
-            <label for="image">Cake image</label>
+            <label for="image">Cake Image</label>
 
             <div class="dropzone" id="dropzone">
 
                 <div class="drop-hint">
 
-                    <strong>Choose a cake photo</strong>
+                    <strong>Choose a Cake Photo</strong>
 
                     <p class="hint">
                         JPG, PNG, or WEBP, up to 5MB
@@ -723,7 +915,7 @@ textarea {
         </div>
 
         <button class="primary" type="submit">
-            Save cake
+            Save Cake
         </button>
 
     </form>
@@ -858,15 +1050,22 @@ function buildRegular() {
 
 }
 
-// Dedicated Bento Cake options
 function buildBento() {
 
     help.textContent =
         'Bento Cakes are available in 4-inch and 5-inch sizes, single layer only. Select the sizes you offer and enter their prices.';
 
     [
-        { name: '4 inches - 1 Layer', label: '4-inch Bento Cake', description: 'Small size · Single layer' },
-        { name: '5 inches - 1 Layer', label: '5-inch Bento Cake', description: 'Larger size · Single layer' }
+        {
+            name: '4 inches - 1 Layer',
+            label: '4-inch Bento Cake',
+            description: 'Small size · Single layer'
+        },
+        {
+            name: '5 inches - 1 Layer',
+            label: '5-inch Bento Cake',
+            description: 'Larger size · Single layer'
+        }
     ].forEach(option => {
 
         const card = document.createElement('section');
@@ -1046,17 +1245,27 @@ category.addEventListener('change', buildOptions);
 
 buildOptions();
 
+/* IMAGE PREVIEW */
 const fileInput = document.getElementById('image');
 const preview = document.getElementById('preview');
 const zone = document.getElementById('dropzone');
+
+let previewUrl = null;
 
 fileInput.addEventListener('change', () => {
 
     const file = fileInput.files[0];
 
+    if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        previewUrl = null;
+    }
+
     if (file && file.type.startsWith('image/')) {
 
-        preview.src = URL.createObjectURL(file);
+        previewUrl = URL.createObjectURL(file);
+        preview.src = previewUrl;
+
         zone.classList.add('has-image');
 
     } else {

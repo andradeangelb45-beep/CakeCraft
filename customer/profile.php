@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 require_once "../database.php";
@@ -229,200 +228,316 @@ $initial = strtoupper(substr($customer_name, 0, 1));
 $joined_date = !empty($customer["created_at"])
     ? date("F Y", strtotime($customer["created_at"]))
     : "Customer";
-
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>My Profile | CakeCraft</title>
 
-    <style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/brand-system.css">
 
-        * {
+    <style>
+        :root {
+            --bg: #fffaf7;
+            --bg-soft: #f7eeea;
+            --bg-tint: #f4e5df;
+            --surface: #ffffff;
+            --ink: #3b2724;
+            --ink-soft: #6f5d57;
+            --rose: #c47c78;
+            --rose-deep: #a65a56;
+            --rose-darker: #8c4845;
+            --craft-color: #a65a56;
+            --line: #efe0da;
+            --line-strong: #dfcec7;
+            --font-body: 'DM Sans', system-ui, sans-serif;
+            --font-display: 'Playfair Display', Georgia, serif;
+            --gutter: max(6%, calc((100vw - 1180px) / 2));
+            --radius: 14px;
+            --shadow: 0 6px 24px rgba(73, 48, 45, 0.08);
+            --shadow-hover: 0 14px 34px rgba(73, 48, 45, 0.14);
+            --ease: cubic-bezier(.2, .7, .2, 1);
+        }
+
+        *, *::before, *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            background: #faf7f5;
-            color: #49352f;
+        html {
+            scroll-behavior: smooth;
         }
 
-        /* NAVBAR */
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--ink);
+            background: var(--bg);
+            font-family: var(--font-body);
+            font-size: 16px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
 
+        h1, h2, h3, h4 {
+            color: var(--ink);
+            font-family: var(--font-display);
+        }
+
+        button, input, select, textarea {
+            font: inherit;
+        }
+
+        :focus-visible {
+            outline: 3px solid var(--rose);
+            outline-offset: 3px;
+            border-radius: 4px;
+        }
+
+        /* NAVIGATION */
         .navbar {
-            background: #fff;
-            border-bottom: 1px solid #eee4df;
-            padding: 0 7%;
             position: sticky;
             top: 0;
             z-index: 100;
+            width: 100%;
+            background: rgba(255, 250, 247, 0.96);
+            border-bottom: 1px solid var(--line);
+            box-shadow: 0 2px 14px rgba(59, 39, 36, 0.05);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
         }
 
         .nav-container {
-            max-width: 1400px;
-            margin: auto;
-            height: 75px;
+            width: 100%;
+            max-width: 1180px;
+            min-height: 74px;
+            margin: 0 auto;
+            padding: 14px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 24px;
+        }
+
+        .brand-mark {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--ink);
+            line-height: 1;
+            white-space: nowrap;
+            flex: none;
+        }
+
+        .brand-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: var(--bg-soft);
+            border: 1px solid var(--line);
+            color: var(--craft-color);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .brand-icon svg {
+            width: 18px;
+            height: 18px;
         }
 
         .logo {
-            font-size: 25px;
-            font-weight: bold;
-            color: #8b5146;
-            text-decoration: none;
+            color: var(--ink);
+            font-family: var(--font-display);
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.01em;
         }
 
-        .logo span {
-            color: #d69a91;
+        .logo span.brand-craft {
+            color: var(--craft-color);
         }
 
         .nav-links {
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 10px 25px;
         }
 
         .nav-links a {
+            position: relative;
+            padding: 6px 0;
+            color: var(--ink);
+            font-size: 15px;
+            font-weight: 500;
             text-decoration: none;
-            color: #6b5750;
-            font-size: 14px;
-            padding: 11px 16px;
-            border-radius: 8px;
-            transition: 0.2s;
+            white-space: nowrap;
+            transition: color 0.2s var(--ease);
         }
 
-        .nav-links a:hover {
-            background: #f8eeeb;
-            color: #92574b;
+        .nav-links a::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            height: 2px;
+            border-radius: 2px;
+            background: var(--rose);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.25s var(--ease);
         }
 
+        .nav-links a:hover,
         .nav-links a.active {
-            background: #f5e6e1;
-            color: #8b5146;
-            font-weight: bold;
+            color: var(--rose-deep);
+        }
+
+        .nav-links a:hover::after,
+        .nav-links a.active::after {
+            transform: scaleX(1);
         }
 
         .nav-links a.logout {
-            background: #8b5146;
-            color: white;
-            margin-left: 5px;
+            padding: 9px 20px;
+            border: 1.5px solid var(--rose-deep);
+            border-radius: 999px;
+            color: var(--rose-deep);
+            font-size: 14px;
+            font-weight: 600;
+            transition: color 0.2s var(--ease), background 0.2s var(--ease), border-color 0.2s var(--ease);
+        }
+
+        .nav-links a.logout::after {
+            display: none;
         }
 
         .nav-links a.logout:hover {
-            background: #704037;
+            color: #ffffff;
+            background: var(--rose-deep);
+            border-color: var(--rose-deep);
         }
 
         /* MAIN CONTAINER */
-
         .main-container {
+            width: 100%;
             max-width: 1250px;
-            margin: 35px auto;
-            padding: 0 25px;
+            margin: 0 auto;
+            padding: 44px 25px 64px;
+            flex: 1;
         }
 
         /* PAGE HEADING */
-
         .page-heading {
             margin-bottom: 28px;
         }
 
         .page-heading h1 {
-            font-size: 28px;
-            color: #49352f;
             margin-bottom: 8px;
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 4.4vw, 2.6rem);
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: -0.01em;
         }
 
         .page-heading p {
-            font-size: 14px;
-            color: #88766f;
+            color: var(--ink-soft);
+            font-size: 16px;
             line-height: 1.6;
         }
 
-        /* NOTIFICATION */
-
+        /* NOTIFICATION MESSAGE */
         .message {
+            margin-bottom: 25px;
             padding: 15px 18px;
             border-radius: 10px;
-            margin-bottom: 25px;
             font-size: 14px;
-            line-height: 1.5;
+            line-height: 1.6;
         }
 
         .message.success {
-            background: #eaf5ec;
-            color: #2f6d3c;
-            border: 1px solid #cce5d1;
+            color: #216b3a;
+            background: #edf8f0;
+            border: 1px solid #bfe3cb;
+            border-left: 4px solid #278348;
         }
 
         .message.error {
-            background: #fbeaea;
-            color: #a33b3b;
-            border: 1px solid #edcccc;
+            color: #9b1c1c;
+            background: #fdecea;
+            border: 1px solid #f3c7c2;
+            border-left: 4px solid #9b1c1c;
         }
 
         /* MAIN PROFILE LAYOUT */
-
         .profile-layout {
             display: grid;
-            grid-template-columns: 290px 1fr;
+            grid-template-columns: 290px minmax(0, 1fr);
             gap: 25px;
             align-items: start;
         }
 
         /* LEFT PROFILE SIDEBAR */
-
         .profile-sidebar {
-            background: #fff;
-            border: 1px solid #eee5e0;
-            border-radius: 15px;
             padding: 30px 24px;
             text-align: center;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
         }
 
         .avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            margin: 0 auto 18px;
-            background: #f2dcd5;
-            color: #8b5146;
             display: flex;
             align-items: center;
             justify-content: center;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 18px;
+            border: 5px solid var(--bg);
+            border-radius: 50%;
+            color: var(--rose-deep);
+            background: var(--bg-soft);
+            font-family: var(--font-display);
             font-size: 38px;
-            font-weight: bold;
-            border: 5px solid #fbf4f1;
+            font-weight: 700;
         }
 
         .profile-sidebar h2 {
-            font-size: 20px;
-            color: #49352f;
             margin-bottom: 8px;
-            word-break: break-word;
+            color: var(--ink);
+            font-family: var(--font-display);
+            font-size: 21px;
+            font-weight: 700;
+            line-height: 1.3;
+            overflow-wrap: anywhere;
         }
 
         .profile-sidebar .email {
+            color: var(--ink-soft);
             font-size: 13px;
-            color: #88766f;
-            word-break: break-word;
+            overflow-wrap: anywhere;
             line-height: 1.6;
         }
 
         .profile-divider {
             height: 1px;
-            background: #eee5e0;
             margin: 25px 0;
+            background: var(--line);
         }
 
         .profile-details {
@@ -438,70 +553,82 @@ $joined_date = !empty($customer["created_at"])
         }
 
         .detail-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #a18c84;
             margin-bottom: 7px;
+            color: var(--ink-soft);
+            opacity: 0.85;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
         .detail-value {
+            color: var(--ink-soft);
             font-size: 14px;
-            color: #5b453d;
             line-height: 1.6;
-            word-break: break-word;
+            overflow-wrap: anywhere;
         }
 
         /* RIGHT SIDE */
-
         .profile-content {
             display: flex;
             flex-direction: column;
             gap: 25px;
+            min-width: 0;
         }
 
         /* CARDS */
-
         .content-card {
-            background: white;
-            border: 1px solid #eee5e0;
-            border-radius: 15px;
             overflow: hidden;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: box-shadow 0.25s var(--ease);
+        }
+
+        .content-card:hover {
+            box-shadow: var(--shadow-hover);
         }
 
         .card-header {
-            padding: 23px 27px;
-            border-bottom: 1px solid #f0e8e4;
             display: flex;
             align-items: center;
             gap: 14px;
+            padding: 23px 27px;
+            border-bottom: 1px solid var(--line);
+            background: var(--bg);
         }
 
         .header-icon {
-            width: 43px;
-            height: 43px;
-            background: #f8e7e3;
-            border-radius: 10px;
             display: flex;
+            flex: none;
             align-items: center;
             justify-content: center;
+            width: 43px;
+            height: 43px;
+            border-radius: 12px;
+            color: var(--rose-deep);
+            background: var(--bg-soft);
             font-size: 21px;
-            flex-shrink: 0;
         }
 
         .header-icon.password-icon {
-            background: #f4eadc;
+            background: var(--bg-tint);
         }
 
         .header-title h2 {
-            font-size: 18px;
-            color: #49352f;
             margin-bottom: 5px;
+            color: var(--ink);
+            font-family: var(--font-display);
+            font-size: 19px;
+            font-weight: 700;
+            line-height: 1.3;
         }
 
         .header-title p {
-            color: #96827a;
-            font-size: 12px;
+            color: var(--ink-soft);
+            font-size: 13px;
             line-height: 1.5;
         }
 
@@ -510,7 +637,6 @@ $joined_date = !empty($customer["created_at"])
         }
 
         /* FORM */
-
         .form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -520,6 +646,7 @@ $joined_date = !empty($customer["created_at"])
         .form-group {
             display: flex;
             flex-direction: column;
+            min-width: 0;
         }
 
         .form-group.full-width {
@@ -527,108 +654,112 @@ $joined_date = !empty($customer["created_at"])
         }
 
         .form-group label {
-            font-size: 13px;
-            font-weight: bold;
-            color: #614a42;
             margin-bottom: 9px;
+            color: var(--ink);
+            font-size: 14px;
+            font-weight: 600;
         }
 
         .form-group input {
             width: 100%;
             padding: 13px 14px;
-            border: 1px solid #e6dcd6;
-            border-radius: 9px;
-            font-size: 14px;
-            background: #fff;
-            color: #49352f;
+            border: 1px solid var(--line-strong);
+            border-radius: 10px;
             outline: none;
-            transition: 0.2s;
+            color: var(--ink);
+            background: var(--surface);
+            font-family: var(--font-body);
+            font-size: 15px;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
         .form-group input:focus {
-            border-color: #b77c6d;
-            box-shadow: 0 0 0 3px rgba(183, 124, 109, 0.12);
+            border-color: var(--rose);
+            box-shadow: 0 0 0 3px rgba(196, 124, 120, 0.16);
         }
 
         .form-group input::placeholder {
-            color: #b6a49c;
+            color: var(--ink-soft);
+            opacity: 0.7;
         }
 
         .form-note {
-            font-size: 12px;
-            color: #99867e;
             margin-top: 7px;
+            color: var(--ink-soft);
+            font-size: 12px;
             line-height: 1.5;
         }
 
         /* BUTTONS */
-
         .form-footer {
-            margin-top: 25px;
-            padding-top: 22px;
-            border-top: 1px solid #f0e8e4;
             display: flex;
             justify-content: flex-end;
+            margin-top: 25px;
+            padding-top: 22px;
+            border-top: 1px solid var(--line);
         }
 
         .save-button {
-            background: #8b5146;
-            color: white;
-            border: none;
-            padding: 13px 22px;
-            border-radius: 9px;
+            padding: 13px 25px;
+            border: 1.5px solid var(--rose-deep);
+            border-radius: 999px;
+            color: #ffffff;
+            background: var(--rose-deep);
+            font-family: var(--font-body);
             font-size: 14px;
-            font-weight: bold;
+            font-weight: 700;
             cursor: pointer;
-            transition: 0.2s;
+            transition: background 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
         }
 
         .save-button:hover {
-            background: #704037;
+            background: var(--rose-darker);
+            border-color: var(--rose-darker);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(166, 90, 86, 0.2);
         }
 
         /* PASSWORD SECTION */
-
         .password-grid {
             display: grid;
             grid-template-columns: 1fr;
             gap: 20px;
         }
 
-        /* BACK LINK - ONLY ONE */
-
+        /* BACK LINK */
         .back-link {
             display: inline-flex;
             align-items: center;
             gap: 8px;
             margin-top: 28px;
-            color: #92574b;
-            text-decoration: none;
+            color: var(--rose-deep);
             font-size: 14px;
-            font-weight: bold;
+            font-weight: 700;
+            text-decoration: none;
+            transition: color 0.2s;
         }
 
         .back-link:hover {
-            color: #704037;
+            color: var(--rose-darker);
+            text-decoration: underline;
+            text-underline-offset: 3px;
         }
 
         /* FOOTER */
-
         footer {
             margin-top: 45px;
-            padding: 25px;
-            text-align: center;
-            color: #9b8982;
+            padding: 28px 20px;
+            border-top: 1px solid var(--line);
+            color: var(--ink-soft);
+            background: var(--bg-soft);
             font-size: 13px;
-            border-top: 1px solid #eee4df;
+            text-align: center;
         }
 
         /* RESPONSIVE */
-
         @media (max-width: 950px) {
-
             .profile-layout {
-                grid-template-columns: 250px 1fr;
+                grid-template-columns: 250px minmax(0, 1fr);
                 gap: 18px;
             }
 
@@ -650,42 +781,27 @@ $joined_date = !empty($customer["created_at"])
             }
         }
 
-        @media (max-width: 700px) {
-
-            .navbar {
-                padding: 0 15px;
-            }
-
+        @media (max-width: 760px) {
             .nav-container {
-                height: auto;
-                padding: 17px 0;
                 flex-direction: column;
-                gap: 15px;
+                justify-content: center;
+                gap: 12px;
+                padding: 14px 6%;
             }
 
             .nav-links {
-                width: 100%;
                 justify-content: center;
-                flex-wrap: wrap;
-                gap: 4px;
-            }
-
-            .nav-links a {
-                padding: 9px 11px;
-                font-size: 12px;
-            }
-
-            .nav-links a.logout {
-                margin-left: 0;
+                gap: 8px 20px;
             }
 
             .main-container {
-                margin: 25px auto;
-                padding: 0 15px;
+                padding: 36px 6% 52px;
             }
+        }
 
+        @media (max-width: 700px) {
             .page-heading h1 {
-                font-size: 24px;
+                font-size: 27px;
             }
 
             .profile-layout {
@@ -709,7 +825,7 @@ $joined_date = !empty($customer["created_at"])
             }
 
             .header-title h2 {
-                font-size: 16px;
+                font-size: 17px;
             }
 
             .form-footer {
@@ -721,128 +837,115 @@ $joined_date = !empty($customer["created_at"])
             }
         }
 
+        @media (max-width: 480px) {
+            .nav-links {
+                gap: 6px 14px;
+            }
+
+            .nav-links a {
+                font-size: 13px;
+            }
+
+            .nav-links a.logout {
+                padding: 8px 15px;
+            }
+
+            .main-container {
+                padding-right: 16px;
+                padding-left: 16px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            *,
+            *::before,
+            *::after {
+                transition-duration: 0.01ms !important;
+            }
+        }
     </style>
-
 </head>
-
 <body>
 
 <!-- NAVBAR -->
 <header class="navbar">
-
     <div class="nav-container">
-
-        <a href="dashboard.php" class="logo">
-            Cake<span>Craft</span>
+        <a href="dashboard.php" class="brand-mark" aria-label="CakeCraft Home">
+            <span class="brand-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3v3" />
+                    <path d="M12 6c-1.1 0-2 .7-2 1.6 0 .5.2.9.5 1.4" />
+                    <path d="M5 12h14a2 2 0 0 1 2 2v5H3v-5a2 2 0 0 1 2-2Z" />
+                    <path d="M3 16c1.5 0 2.5-1 4-1s2.5 1 4 1 2.5-1 4-1 2.5 1 4 1 2-.5 2-1" />
+                    <path d="M3 19h18" />
+                </svg>
+            </span>
+            <span class="logo">Cake<span class="brand-craft">Craft</span></span>
         </a>
 
-        <nav class="nav-links">
-            <a href="dashboard.php">Dashboard</a>
+        <nav class="nav-links" aria-label="Customer navigation">
+            <a href="dashboard.php">Home</a>
             <a href="cakes.php">Cakes</a>
             <a href="my_orders.php">My Orders</a>
-            <a href="profile.php" class="active">My Profile</a>
+            <a href="notifications.php">🔔 Notifications</a>
+            <a href="profile.php" class="active" aria-current="page">Profile</a>
             <a href="logout.php" class="logout">Logout</a>
         </nav>
-
     </div>
-
 </header>
 
 <!-- MAIN CONTENT -->
 <main class="main-container">
 
-    <!-- PAGE HEADING -->
     <div class="page-heading">
-
         <h1>My Profile</h1>
-
-        <p>
-            Manage your personal information and account security.
-        </p>
-
+        <p>Manage your personal information and account security.</p>
     </div>
 
-    <!-- MESSAGE -->
     <?php if (!empty($message)): ?>
-
-        <div class="message <?php echo $message_type; ?>">
+        <div class="message <?php echo htmlspecialchars($message_type); ?>" role="status">
             <?php echo htmlspecialchars($message); ?>
         </div>
-
     <?php endif; ?>
 
-    <!-- PROFILE LAYOUT -->
     <div class="profile-layout">
 
         <!-- LEFT SIDEBAR -->
         <aside class="profile-sidebar">
-
             <div class="avatar">
                 <?php echo htmlspecialchars($initial); ?>
             </div>
 
-            <h2>
-                <?php echo htmlspecialchars($customer_name); ?>
-            </h2>
-
-            <p class="email">
-                <?php echo htmlspecialchars($customer_email); ?>
-            </p>
+            <h2><?php echo htmlspecialchars($customer_name); ?></h2>
+            <p class="email"><?php echo htmlspecialchars($customer_email); ?></p>
 
             <div class="profile-divider"></div>
 
             <div class="profile-details">
-
                 <div class="detail-item">
-
-                    <div class="detail-label">
-                        Full Name
-                    </div>
-
-                    <div class="detail-value">
-                        <?php echo htmlspecialchars($customer_name); ?>
-                    </div>
-
+                    <div class="detail-label">Full Name</div>
+                    <div class="detail-value"><?php echo htmlspecialchars($customer_name); ?></div>
                 </div>
 
                 <div class="detail-item">
-
-                    <div class="detail-label">
-                        Email Address
-                    </div>
-
-                    <div class="detail-value">
-                        <?php echo htmlspecialchars($customer_email); ?>
-                    </div>
-
+                    <div class="detail-label">Email Address</div>
+                    <div class="detail-value"><?php echo htmlspecialchars($customer_email); ?></div>
                 </div>
 
                 <div class="detail-item">
-
-                    <div class="detail-label">
-                        Contact Number
-                    </div>
-
-                    <div class="detail-value">
-                        <?php echo htmlspecialchars($customer_phone); ?>
-                    </div>
-
+                    <div class="detail-label">Contact Number</div>
+                    <div class="detail-value"><?php echo htmlspecialchars($customer_phone); ?></div>
                 </div>
 
                 <div class="detail-item">
-
-                    <div class="detail-label">
-                        Customer Since
-                    </div>
-
-                    <div class="detail-value">
-                        <?php echo htmlspecialchars($joined_date); ?>
-                    </div>
-
+                    <div class="detail-label">Customer Since</div>
+                    <div class="detail-value"><?php echo htmlspecialchars($joined_date); ?></div>
                 </div>
-
             </div>
-
         </aside>
 
         <!-- RIGHT CONTENT -->
@@ -850,49 +953,22 @@ $joined_date = !empty($customer["created_at"])
 
             <!-- PERSONAL INFORMATION -->
             <section class="content-card">
-
                 <div class="card-header">
-
-                    <div class="header-icon">
-                        👤
-                    </div>
-
+                    <div class="header-icon" aria-hidden="true">👤</div>
                     <div class="header-title">
-
                         <h2>Personal Information</h2>
-
-                        <p>
-                            Update your name, email, and contact number.
-                        </p>
-
+                        <p>Update your name, email, and contact number.</p>
                     </div>
-
                 </div>
 
                 <div class="card-body">
-
                     <form method="POST" action="profile.php">
-
-                        <input
-                            type="hidden"
-                            name="profile_token"
-                            value="<?php echo htmlspecialchars($token); ?>"
-                        >
-
-                        <input
-                            type="hidden"
-                            name="action"
-                            value="update_profile"
-                        >
+                        <input type="hidden" name="profile_token" value="<?php echo htmlspecialchars($token); ?>">
+                        <input type="hidden" name="action" value="update_profile">
 
                         <div class="form-grid">
-
                             <div class="form-group full-width">
-
-                                <label for="full_name">
-                                    Full Name
-                                </label>
-
+                                <label for="full_name">Full Name</label>
                                 <input
                                     type="text"
                                     id="full_name"
@@ -902,15 +978,10 @@ $joined_date = !empty($customer["created_at"])
                                     maxlength="100"
                                     required
                                 >
-
                             </div>
 
                             <div class="form-group">
-
-                                <label for="email">
-                                    Email Address
-                                </label>
-
+                                <label for="email">Email Address</label>
                                 <input
                                     type="email"
                                     id="email"
@@ -920,15 +991,10 @@ $joined_date = !empty($customer["created_at"])
                                     maxlength="100"
                                     required
                                 >
-
                             </div>
 
                             <div class="form-group">
-
-                                <label for="phone">
-                                    Contact Number
-                                </label>
-
+                                <label for="phone">Contact Number</label>
                                 <input
                                     type="text"
                                     id="phone"
@@ -938,70 +1004,34 @@ $joined_date = !empty($customer["created_at"])
                                     maxlength="20"
                                     required
                                 >
-
                             </div>
-
                         </div>
 
                         <div class="form-footer">
-
-                            <button type="submit" class="save-button">
-                                Save Changes
-                            </button>
-
+                            <button type="submit" class="save-button">Save Changes</button>
                         </div>
-
                     </form>
-
                 </div>
-
             </section>
 
             <!-- CHANGE PASSWORD -->
             <section class="content-card">
-
                 <div class="card-header">
-
-                    <div class="header-icon password-icon">
-                        🔒
-                    </div>
-
+                    <div class="header-icon password-icon" aria-hidden="true">🔒</div>
                     <div class="header-title">
-
                         <h2>Change Password</h2>
-
-                        <p>
-                            Keep your account secure with a strong password.
-                        </p>
-
+                        <p>Keep your account secure with a strong password.</p>
                     </div>
-
                 </div>
 
                 <div class="card-body">
-
                     <form method="POST" action="profile.php">
-
-                        <input
-                            type="hidden"
-                            name="profile_token"
-                            value="<?php echo htmlspecialchars($token); ?>"
-                        >
-
-                        <input
-                            type="hidden"
-                            name="action"
-                            value="change_password"
-                        >
+                        <input type="hidden" name="profile_token" value="<?php echo htmlspecialchars($token); ?>">
+                        <input type="hidden" name="action" value="change_password">
 
                         <div class="password-grid">
-
                             <div class="form-group">
-
-                                <label for="current_password">
-                                    Current Password
-                                </label>
-
+                                <label for="current_password">Current Password</label>
                                 <input
                                     type="password"
                                     id="current_password"
@@ -1009,15 +1039,10 @@ $joined_date = !empty($customer["created_at"])
                                     placeholder="Enter your current password"
                                     required
                                 >
-
                             </div>
 
                             <div class="form-group">
-
-                                <label for="new_password">
-                                    New Password
-                                </label>
-
+                                <label for="new_password">New Password</label>
                                 <input
                                     type="password"
                                     id="new_password"
@@ -1026,19 +1051,11 @@ $joined_date = !empty($customer["created_at"])
                                     minlength="8"
                                     required
                                 >
-
-                                <span class="form-note">
-                                    Your password must contain at least 8 characters.
-                                </span>
-
+                                <span class="form-note">Your password must contain at least 8 characters.</span>
                             </div>
 
                             <div class="form-group">
-
-                                <label for="confirm_password">
-                                    Confirm New Password
-                                </label>
-
+                                <label for="confirm_password">Confirm New Password</label>
                                 <input
                                     type="password"
                                     id="confirm_password"
@@ -1047,40 +1064,23 @@ $joined_date = !empty($customer["created_at"])
                                     minlength="8"
                                     required
                                 >
-
                             </div>
-
                         </div>
 
                         <div class="form-footer">
-
-                            <button type="submit" class="save-button">
-                                Update Password
-                            </button>
-
+                            <button type="submit" class="save-button">Update Password</button>
                         </div>
-
                     </form>
-
                 </div>
-
             </section>
-
         </div>
-
     </div>
 
-    <!-- ONLY ONE BACK TO DASHBOARD -->
-    <a href="dashboard.php" class="back-link">
-        ← Back to Dashboard
-    </a>
-
+    <a href="dashboard.php" class="back-link">← Back to Dashboard</a>
 </main>
 
-<!-- FOOTER -->
 <footer>
-    &copy; <?php echo date("Y"); ?> CakeCraft.
-    All rights reserved.
+    &copy; <?php echo date("Y"); ?> CakeCraft. All rights reserved.
 </footer>
 
 </body>

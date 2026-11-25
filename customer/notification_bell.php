@@ -38,16 +38,24 @@ if ($customer_id > 0) {
         width: 38px;
         height: 38px;
         font-size: 21px;
-        border-radius: 50%;
-        transition: background .2s ease;
+        color: var(--ink, #3b2724);
+        border-radius: 999px;
+        transition: background .2s cubic-bezier(.2, .7, .2, 1), color .2s cubic-bezier(.2, .7, .2, 1);
     }
 
     .notification-nav::after {
         display: none !important;
     }
 
-    .notification-nav:hover {
-        background: #f7eeea;
+    .notification-nav:hover,
+    .notification-nav.active {
+        background: var(--bg-soft, #f7eeea);
+        color: var(--rose-deep, #a65a56);
+    }
+
+    .notification-nav:focus-visible {
+        outline: 3px solid var(--rose, #c47c78);
+        outline-offset: 3px;
     }
 
     .notification-badge {
@@ -60,14 +68,14 @@ if ($customer_id > 0) {
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #c43d46;
-        color: #ffffff;
+        background: var(--rose-darker, #8c4845);
+        color: var(--surface, #ffffff);
         border-radius: 999px;
-        font-family: Arial, sans-serif;
+        font-family: var(--font-body, 'DM Sans', system-ui, sans-serif);
         font-size: 10px;
         font-weight: 700;
         line-height: 1;
-        border: 2px solid #fffaf7;
+        border: 2px solid var(--bg, #fffaf7);
     }
 </style>
 

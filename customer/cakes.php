@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 require_once "../database.php";
@@ -102,18 +101,21 @@ if (!$result) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/brand-system.css">
 
     <style>
         :root {
             --bg: #fffaf7;
             --bg-soft: #f7eeea;
+            --bg-tint: #f4e5df;
             --surface: #ffffff;
             --ink: #3b2724;
             --ink-soft: #6f5d57;
             --rose: #c47c78;
             --rose-deep: #a65a56;
             --rose-darker: #8c4845;
+            --craft-color: #a65a56;
             --line: #efe0da;
             --font-body: 'DM Sans', system-ui, sans-serif;
             --font-display: 'Playfair Display', Georgia, serif;
@@ -123,7 +125,7 @@ if (!$result) {
             --ease: cubic-bezier(.2, .7, .2, 1);
         }
 
-        * {
+        *, *::before, *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -158,24 +160,52 @@ if (!$result) {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px var(--gutter);
-            background: rgba(255, 250, 247, 0.88);
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
+            padding: 14px var(--gutter);
+            background: rgba(255, 250, 247, 0.96);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--line);
+            box-shadow: 0 2px 14px rgba(59, 39, 36, 0.05);
+        }
+
+        .brand-mark {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--ink);
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .brand-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: var(--bg-soft);
+            border: 1px solid var(--line);
+            color: var(--craft-color);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .brand-icon svg {
+            width: 18px;
+            height: 18px;
         }
 
         .logo {
             font-family: var(--font-display);
             font-size: 28px;
-            font-weight: 700;
+            font-weight: 800;
             letter-spacing: -0.01em;
-            text-decoration: none;
             color: var(--ink);
         }
 
-        .logo span {
-            color: var(--rose);
+        .logo span.brand-craft {
+            color: var(--craft-color);
         }
 
         nav {
@@ -223,7 +253,7 @@ if (!$result) {
             border-radius: 999px;
             font-size: 14px;
             font-weight: 600;
-            transition: background .2s var(--ease);
+            transition: background .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease);
         }
 
         nav a.logout::after {
@@ -232,6 +262,8 @@ if (!$result) {
 
         nav a.logout:hover {
             background: var(--bg-soft);
+            color: var(--rose-deep);
+            border-color: var(--rose-deep);
         }
 
         /* Notification Bell */
@@ -268,7 +300,7 @@ if (!$result) {
             display: flex;
             justify-content: center;
             align-items: center;
-            background: #dc3545;
+            background: var(--rose-deep);
             color: #fff;
             border-radius: 999px;
             font-size: 10px;
@@ -287,7 +319,7 @@ if (!$result) {
         .page-heading h1 {
             font-family: var(--font-display);
             font-size: clamp(2rem, 4.4vw, 3rem);
-            font-weight: 600;
+            font-weight: 700;
             line-height: 1.15;
             letter-spacing: -0.015em;
             margin-bottom: 14px;
@@ -309,7 +341,7 @@ if (!$result) {
         .catalog h2 {
             font-family: var(--font-display);
             font-size: 26px;
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 8px;
         }
 
@@ -406,7 +438,7 @@ if (!$result) {
         .cake-info h3 {
             font-family: var(--font-display);
             font-size: 22px;
-            font-weight: 600;
+            font-weight: 700;
             line-height: 1.3;
             margin-bottom: 8px;
         }
@@ -441,7 +473,7 @@ if (!$result) {
             margin-bottom: 20px;
             font-family: var(--font-display);
             font-size: 24px;
-            font-weight: 600;
+            font-weight: 700;
             color: var(--rose-deep);
         }
 
@@ -484,7 +516,7 @@ if (!$result) {
         .empty-state h3 {
             font-family: var(--font-display);
             font-size: 24px;
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 10px;
         }
 
@@ -502,6 +534,7 @@ if (!$result) {
             text-align: center;
             color: var(--ink-soft);
             font-size: 14px;
+            background: var(--bg-soft);
         }
 
         @media (max-width: 1000px) {
@@ -556,8 +589,17 @@ if (!$result) {
 
 <header>
 
-    <a href="dashboard.php" class="logo">
-        Cake<span>Craft</span>
+    <a href="dashboard.php" class="brand-mark" aria-label="CakeCraft Customer Dashboard">
+        <span class="brand-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v3" />
+                <path d="M12 6c-1.1 0-2 .7-2 1.6 0 .5.2.9.5 1.4" />
+                <path d="M5 12h14a2 2 0 0 1 2 2v5H3v-5a2 2 0 0 1 2-2Z" />
+                <path d="M3 16c1.5 0 2.5-1 4-1s2.5 1 4 1 2.5-1 4-1 2.5 1 4 1 2-.5 2-1" />
+                <path d="M3 19h18" />
+            </svg>
+        </span>
+        <span class="logo">Cake<span class="brand-craft">Craft</span></span>
     </a>
 
     <nav>

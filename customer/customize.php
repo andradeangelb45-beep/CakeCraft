@@ -66,18 +66,21 @@ $image_path = "../assets/images/" . $cake["image"];
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/brand-system.css">
 
     <style>
         :root {
             --bg: #fffaf7;
             --bg-soft: #f7eeea;
+            --bg-tint: #f4e5df;
             --surface: #ffffff;
             --ink: #3b2724;
             --ink-soft: #6f5d57;
             --rose: #c47c78;
             --rose-deep: #a65a56;
             --rose-darker: #8c4845;
+            --craft-color: #a65a56;
             --line: #efe0da;
             --line-strong: #e0cbc3;
             --font-body: 'DM Sans', system-ui, sans-serif;
@@ -87,7 +90,7 @@ $image_path = "../assets/images/" . $cake["image"];
             --ease: cubic-bezier(.2, .7, .2, 1);
         }
 
-        * {
+        *, *::before, *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -121,22 +124,52 @@ $image_path = "../assets/images/" . $cake["image"];
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px var(--gutter);
-            background: rgba(255, 250, 247, 0.88);
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
+            padding: 14px var(--gutter);
+            background: rgba(255, 250, 247, 0.96);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--line);
+            box-shadow: 0 2px 14px rgba(59, 39, 36, 0.05);
+        }
+
+        .brand-mark {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--ink);
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .brand-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: var(--bg-soft);
+            border: 1px solid var(--line);
+            color: var(--craft-color);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .brand-icon svg {
+            width: 18px;
+            height: 18px;
         }
 
         .logo {
             font-family: var(--font-display);
             font-size: 28px;
-            font-weight: 700;
+            font-weight: 800;
             letter-spacing: -0.01em;
+            color: var(--ink);
         }
 
-        .logo span {
-            color: var(--rose);
+        .logo span.brand-craft {
+            color: var(--craft-color);
         }
 
         nav {
@@ -184,6 +217,7 @@ $image_path = "../assets/images/" . $cake["image"];
             border-radius: 999px;
             font-size: 14px;
             font-weight: 600;
+            transition: background .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease);
         }
 
         nav a.logout::after {
@@ -192,6 +226,8 @@ $image_path = "../assets/images/" . $cake["image"];
 
         nav a.logout:hover {
             background: var(--bg-soft);
+            color: var(--rose-deep);
+            border-color: var(--rose-deep);
         }
 
         /* CONTENT */
@@ -252,10 +288,23 @@ $image_path = "../assets/images/" . $cake["image"];
             font-weight: 500;
         }
 
+        .cake-category-pill {
+            display: inline-block;
+            margin-bottom: 10px;
+            padding: 5px 12px;
+            border-radius: 999px;
+            background: var(--bg-soft);
+            border: 1px solid var(--line);
+            color: var(--rose-deep);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .02em;
+        }
+
         .cake-info h1 {
             font-family: var(--font-display);
             font-size: clamp(1.9rem, 3.4vw, 2.6rem);
-            font-weight: 600;
+            font-weight: 700;
             line-height: 1.15;
             letter-spacing: -0.015em;
             margin-bottom: 14px;
@@ -273,7 +322,7 @@ $image_path = "../assets/images/" . $cake["image"];
         .section-title {
             font-family: var(--font-display);
             font-size: 22px;
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 16px;
         }
 
@@ -299,7 +348,7 @@ $image_path = "../assets/images/" . $cake["image"];
 
         .size-option:has(input:checked) {
             border-color: var(--rose-deep);
-            background: #fff5f3;
+            background: var(--bg-soft);
             box-shadow: 0 0 0 3px rgba(196, 124, 120, 0.2);
         }
 
@@ -338,6 +387,7 @@ $image_path = "../assets/images/" . $cake["image"];
 
         .selected-price {
             background: var(--bg-soft);
+            border: 1px solid var(--line);
             padding: 20px 22px;
             border-radius: 12px;
             margin-top: 24px;
@@ -350,7 +400,7 @@ $image_path = "../assets/images/" . $cake["image"];
         .selected-price strong {
             font-family: var(--font-display);
             font-size: 28px;
-            font-weight: 600;
+            font-weight: 700;
             color: var(--rose-deep);
         }
 
@@ -436,7 +486,18 @@ $image_path = "../assets/images/" . $cake["image"];
 <body>
 
 <header>
-    <div class="logo">Cake<span>Craft</span></div>
+    <a href="dashboard.php" class="brand-mark" aria-label="CakeCraft Home">
+        <span class="brand-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v3" />
+                <path d="M12 6c-1.1 0-2 .7-2 1.6 0 .5.2.9.5 1.4" />
+                <path d="M5 12h14a2 2 0 0 1 2 2v5H3v-5a2 2 0 0 1 2-2Z" />
+                <path d="M3 16c1.5 0 2.5-1 4-1s2.5 1 4 1 2.5-1 4-1 2.5 1 4 1 2-.5 2-1" />
+                <path d="M3 19h18" />
+            </svg>
+        </span>
+        <span class="logo">Cake<span class="brand-craft">Craft</span></span>
+    </a>
 
     <nav>
         <a href="dashboard.php">Home</a>
@@ -465,6 +526,12 @@ $image_path = "../assets/images/" . $cake["image"];
         </div>
 
         <div class="cake-info">
+
+            <?php if (!empty($cake["category"])): ?>
+                <span class="cake-category-pill">
+                    <?php echo htmlspecialchars($cake["category"]); ?>
+                </span>
+            <?php endif; ?>
 
             <h1><?php echo htmlspecialchars($cake["cake_name"]); ?></h1>
 

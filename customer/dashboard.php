@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 require_once "../database.php";
@@ -46,7 +45,8 @@ if ($stmt_notifications) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/brand-system.css">
 
     <style>
         /* =========================
@@ -56,6 +56,7 @@ if ($stmt_notifications) {
         :root {
             --bg: #fffaf7;
             --bg-soft: #f7eeea;
+            --bg-tint: #f4e5df;
             --surface: #ffffff;
 
             --ink: #3b2724;
@@ -64,6 +65,7 @@ if ($stmt_notifications) {
             --rose: #c47c78;
             --rose-deep: #a65a56;
             --rose-darker: #8c4845;
+            --craft-color: #a65a56;
 
             --line: #efe0da;
             --footer: #3b2724;
@@ -85,7 +87,7 @@ if ($stmt_notifications) {
            RESET
         ========================= */
 
-        * {
+        *, *::before, *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -130,14 +132,15 @@ if ($stmt_notifications) {
             top: 0;
             z-index: 50;
 
-            background: rgba(255, 250, 247, 0.88);
+            background: rgba(255, 250, 247, 0.96);
 
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
 
             border-bottom: 1px solid var(--line);
+            box-shadow: 0 2px 14px rgba(59, 39, 36, 0.05);
 
-            padding: 16px var(--gutter);
+            padding: 14px var(--gutter);
         }
 
         .nav-container {
@@ -151,21 +154,46 @@ if ($stmt_notifications) {
             gap: 30px;
         }
 
-        .logo {
-            font-family: var(--font-display);
-            font-size: 28px;
-            font-weight: 700;
-
+        .brand-mark {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
             color: var(--ink);
             text-decoration: none;
-
-            letter-spacing: -0.01em;
-
+            line-height: 1;
             white-space: nowrap;
         }
 
-        .logo span {
-            color: var(--rose);
+        .brand-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: var(--bg-soft);
+            border: 1px solid var(--line);
+            color: var(--craft-color);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .brand-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .logo {
+            font-family: var(--font-display);
+            font-size: 28px;
+            font-weight: 800;
+
+            color: var(--ink);
+
+            letter-spacing: -0.01em;
+        }
+
+        .logo span.brand-craft {
+            color: var(--craft-color);
         }
 
         .nav-links {
@@ -231,7 +259,8 @@ if ($stmt_notifications) {
 
             transition:
                 background .2s var(--ease),
-                color .2s var(--ease);
+                color .2s var(--ease),
+                border-color .2s var(--ease);
         }
 
         .nav-links a.logout::after {
@@ -241,6 +270,7 @@ if ($stmt_notifications) {
         .nav-links a.logout:hover {
             background: var(--bg-soft);
             color: var(--rose-deep);
+            border-color: var(--rose-deep);
         }
 
         /* Notification Bell */
@@ -288,7 +318,7 @@ if ($stmt_notifications) {
             justify-content: center;
             align-items: center;
 
-            background: #dc3545;
+            background: var(--rose-deep);
             color: #fff;
 
             border-radius: 999px;
@@ -322,8 +352,9 @@ if ($stmt_notifications) {
         .welcome-section {
             background: linear-gradient(
                 135deg,
-                #965c50,
-                #bd8374
+                var(--rose-darker),
+                var(--rose-deep) 55%,
+                var(--rose)
             );
 
             border-radius: 18px;
@@ -340,7 +371,7 @@ if ($stmt_notifications) {
 
             margin-bottom: 45px;
 
-            box-shadow: 0 8px 25px rgba(139, 81, 70, 0.12);
+            box-shadow: 0 8px 25px rgba(73, 48, 45, 0.14);
         }
 
         .welcome-text {
@@ -354,11 +385,12 @@ if ($stmt_notifications) {
             gap: 12px;
 
             font-size: 13px;
+            font-weight: 600;
             text-transform: uppercase;
 
             letter-spacing: 2px;
 
-            opacity: 0.85;
+            opacity: 0.9;
 
             margin-bottom: 15px;
         }
@@ -369,7 +401,7 @@ if ($stmt_notifications) {
             width: 30px;
             height: 2px;
 
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.75);
         }
 
         .welcome-text h1 {
@@ -377,7 +409,7 @@ if ($stmt_notifications) {
 
             font-size: clamp(27px, 3.5vw, 36px);
 
-            font-weight: 600;
+            font-weight: 700;
 
             margin-bottom: 15px;
 
@@ -389,7 +421,7 @@ if ($stmt_notifications) {
 
             line-height: 1.8;
 
-            opacity: 0.92;
+            opacity: 0.94;
 
             max-width: 680px;
         }
@@ -400,7 +432,7 @@ if ($stmt_notifications) {
 
             border-radius: 50%;
 
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.16);
 
             display: flex;
             justify-content: center;
@@ -423,7 +455,7 @@ if ($stmt_notifications) {
             font-family: var(--font-display);
 
             font-size: 28px;
-            font-weight: 600;
+            font-weight: 700;
 
             color: var(--ink);
 
@@ -496,15 +528,15 @@ if ($stmt_notifications) {
         }
 
         .icon-cakes {
-            background: #f8e7e3;
+            background: var(--bg-soft);
         }
 
         .icon-customize {
-            background: #f4eadc;
+            background: var(--bg-tint);
         }
 
         .icon-orders {
-            background: #e9e9f5;
+            background: var(--bg-soft);
         }
 
         /* Card Text */
@@ -513,7 +545,7 @@ if ($stmt_notifications) {
             font-family: var(--font-display);
 
             font-size: 21px;
-            font-weight: 600;
+            font-weight: 700;
 
             color: var(--ink);
 
@@ -591,7 +623,7 @@ if ($stmt_notifications) {
             width: 52px;
             height: 52px;
 
-            background: #f8e7e3;
+            background: var(--bg-soft);
 
             border-radius: 50%;
 
@@ -608,7 +640,7 @@ if ($stmt_notifications) {
             font-family: var(--font-display);
 
             font-size: 19px;
-            font-weight: 600;
+            font-weight: 700;
 
             margin-bottom: 7px;
         }
@@ -653,7 +685,7 @@ if ($stmt_notifications) {
 
             border-top: 1px solid var(--line);
 
-            background: var(--bg);
+            background: var(--bg-soft);
         }
 
         /* =========================
@@ -838,8 +870,17 @@ if ($stmt_notifications) {
 
     <div class="nav-container">
 
-        <a href="dashboard.php" class="logo">
-            Cake<span>Craft</span>
+        <a href="dashboard.php" class="brand-mark" aria-label="CakeCraft Customer Dashboard">
+            <span class="brand-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3v3" />
+                    <path d="M12 6c-1.1 0-2 .7-2 1.6 0 .5.2.9.5 1.4" />
+                    <path d="M5 12h14a2 2 0 0 1 2 2v5H3v-5a2 2 0 0 1 2-2Z" />
+                    <path d="M3 16c1.5 0 2.5-1 4-1s2.5 1 4 1 2.5-1 4-1 2.5 1 4 1 2-.5 2-1" />
+                    <path d="M3 19h18" />
+                </svg>
+            </span>
+            <span class="logo">Cake<span class="brand-craft">Craft</span></span>
         </a>
 
         <nav class="nav-links">

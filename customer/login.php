@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 require_once "../database.php";
@@ -203,9 +202,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700;800&display=swap"
         rel="stylesheet"
     >
+    <link rel="stylesheet" href="../assets/css/brand-system.css">
 
     <style>
 
@@ -218,6 +218,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             --rose: #c47c78;
             --rose-deep: #a65a56;
             --rose-darker: #8c4845;
+            --craft-color: #a65a56;
             --line: #e6d3cc;
             --error-bg: #fdecea;
             --error-ink: #9b1c1c;
@@ -228,7 +229,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             --ease: cubic-bezier(.2, .7, .2, 1);
         }
 
-        * {
+        *, *::before, *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -293,13 +294,42 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         /* Brand */
 
+        .brand-mark {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--ink);
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .brand-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: var(--bg-soft);
+            border: 1px solid var(--line);
+            color: var(--craft-color);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .brand-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+
         .brand {
-            display: block;
-            text-align: center;
+            display: flex;
+            justify-content: center;
 
             font-family: var(--font-display);
             font-size: 28px;
-            font-weight: 700;
+            font-weight: 800;
 
             letter-spacing: -0.01em;
 
@@ -309,8 +339,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             margin-bottom: 26px;
         }
 
-        .brand span {
-            color: var(--rose);
+        .brand span.brand-craft {
+            color: var(--craft-color);
         }
 
         /* Heading */
@@ -528,9 +558,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <div class="login-container">
 
         <!-- Brand -->
-        <a href="../index.php" class="brand">
-            Cake<span>Craft.</span>
-        </a>
+        <div class="brand">
+            <a href="../index.php" class="brand-mark" aria-label="CakeCraft Home">
+                <span class="brand-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3v3" />
+                        <path d="M12 6c-1.1 0-2 .7-2 1.6 0 .5.2.9.5 1.4" />
+                        <path d="M5 12h14a2 2 0 0 1 2 2v5H3v-5a2 2 0 0 1 2-2Z" />
+                        <path d="M3 16c1.5 0 2.5-1 4-1s2.5 1 4 1 2.5-1 4-1 2.5 1 4 1 2-.5 2-1" />
+                        <path d="M3 19h18" />
+                    </svg>
+                </span>
+                <span>Cake<span class="brand-craft">Craft</span></span>
+            </a>
+        </div>
 
         <!-- Heading -->
         <h1>Welcome back</h1>

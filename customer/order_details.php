@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 require_once "../database.php";
@@ -311,23 +310,26 @@ $image_path = "../assets/images/" . $cake["image"];
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/brand-system.css">
 
 <style>
 :root {
     --bg: #fffaf7;
     --bg-soft: #f7eeea;
+    --bg-tint: #f4e5df;
     --surface: #ffffff;
     --ink: #3b2724;
     --ink-soft: #6f5d57;
     --rose: #c47c78;
     --rose-deep: #a65a56;
     --rose-darker: #8c4845;
+    --craft-color: #a65a56;
     --line: #efe0da;
     --line-strong: #e6d3cc;
-    --error-bg: #fdecea;
-    --error-ink: #9b1c1c;
-    --ok-bg: #e8f6ec;
-    --ok-ink: #17602f;
+    --error-bg: #f9e9e7;
+    --error-ink: #963f3b;
+    --ok-bg: #edf5ed;
+    --ok-ink: #426c4e;
 
     --font-body: 'DM Sans', system-ui, sans-serif;
     --font-display: 'Playfair Display', Georgia, serif;
@@ -338,7 +340,7 @@ $image_path = "../assets/images/" . $cake["image"];
     --ease: cubic-bezier(.2, .7, .2, 1);
 }
 
-* {
+*, *::before, *::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -346,6 +348,7 @@ $image_path = "../assets/images/" . $cake["image"];
 
 body {
     font-family: var(--font-body);
+    font-size: 16px;
     line-height: 1.6;
     background: var(--bg);
     color: var(--ink);
@@ -370,24 +373,54 @@ header {
     justify-content: space-between;
     align-items: center;
 
-    padding: 16px var(--gutter);
+    padding: 14px var(--gutter);
 
-    background: rgba(255, 250, 247, 0.88);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
+    background: rgba(255, 250, 247, 0.96);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
 
     border-bottom: 1px solid var(--line);
+    box-shadow: 0 2px 14px rgba(59, 39, 36, 0.05);
+}
+
+.brand-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--ink);
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.brand-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    color: var(--craft-color);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.brand-icon svg {
+    width: 18px;
+    height: 18px;
 }
 
 .logo {
     font-family: var(--font-display);
     font-size: 28px;
-    font-weight: 700;
+    font-weight: 800;
     letter-spacing: -0.01em;
+    color: var(--ink);
 }
 
-.logo span {
-    color: var(--rose);
+.logo span.brand-craft {
+    color: var(--craft-color);
 }
 
 nav {
@@ -435,6 +468,7 @@ nav a.logout {
     border-radius: 999px;
     font-size: 14px;
     font-weight: 600;
+    transition: background .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease);
 }
 
 nav a.logout::after {
@@ -443,6 +477,8 @@ nav a.logout::after {
 
 nav a.logout:hover {
     background: var(--bg-soft);
+    color: var(--rose-deep);
+    border-color: var(--rose-deep);
 }
 
 /* CONTENT */
@@ -471,7 +507,7 @@ nav a.logout:hover {
 h1 {
     font-family: var(--font-display);
     font-size: clamp(1.9rem, 4vw, 2.6rem);
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1.15;
     letter-spacing: -0.015em;
     margin-bottom: 10px;
@@ -479,7 +515,7 @@ h1 {
 
 h2 {
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .subtitle {
@@ -532,8 +568,8 @@ h2 {
 
 .summary-label {
     font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
+    font-weight: 700;
+    letter-spacing: 0.06em;
     color: var(--rose-deep);
     margin-bottom: 4px;
 }
@@ -603,20 +639,21 @@ select {
 
 input::placeholder,
 textarea::placeholder {
-    color: #a8978f;
+    color: var(--ink-soft);
+    opacity: 0.7;
 }
 
 input:hover,
 textarea:hover,
 select:hover {
-    border-color: #d4bdb4;
+    border-color: #dfc2bc;
 }
 
 input:focus,
 textarea:focus,
 select:focus {
     outline: none;
-    background: #fff;
+    background: var(--surface);
     border-color: var(--rose-deep);
     box-shadow: 0 0 0 4px rgba(196, 124, 120, 0.22);
 }
@@ -649,6 +686,7 @@ textarea {
     justify-content: space-between;
     align-items: center;
     background: var(--bg-soft);
+    border: 1px solid var(--line);
     padding: 20px 22px;
     border-radius: 12px;
     font-weight: 500;
@@ -657,7 +695,7 @@ textarea {
 .total strong {
     font-family: var(--font-display);
     font-size: 30px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--rose-deep);
 }
 
@@ -698,13 +736,14 @@ button:hover,
 
 .btn.secondary {
     color: var(--ink);
-    background: transparent;
+    background: var(--bg-soft);
     border: 1.5px solid var(--rose);
     box-shadow: none;
 }
 
 .btn.secondary:hover {
-    background: var(--bg-soft);
+    background: var(--bg-tint);
+    color: var(--rose-deep);
     transform: none;
 }
 
@@ -716,7 +755,7 @@ button:hover,
     align-items: flex-start;
     background: var(--error-bg);
     color: var(--error-ink);
-    border: 1px solid #f3c7c2;
+    border: 1px solid #efd1cd;
     border-left: 4px solid var(--error-ink);
     padding: 12px 14px;
     margin-bottom: 24px;
@@ -773,6 +812,7 @@ button:hover,
     margin: 26px 0 28px;
     padding: 18px 20px;
     background: var(--bg-soft);
+    border: 1px solid var(--line);
     border-radius: 12px;
     text-align: left;
 }
@@ -797,10 +837,10 @@ button:hover,
 .status {
     padding: 3px 12px;
     border-radius: 999px;
-    background: #fff1d6;
-    color: #8a5a00;
+    background: var(--bg-tint);
+    color: var(--rose-darker);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .success .btn + .btn {
@@ -869,7 +909,18 @@ button:hover,
 <body>
 
 <header>
-    <div class="logo">Cake<span>Craft</span></div>
+    <a href="dashboard.php" class="brand-mark" aria-label="CakeCraft Home">
+        <span class="brand-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v3" />
+                <path d="M12 6c-1.1 0-2 .7-2 1.6 0 .5.2.9.5 1.4" />
+                <path d="M5 12h14a2 2 0 0 1 2 2v5H3v-5a2 2 0 0 1 2-2Z" />
+                <path d="M3 16c1.5 0 2.5-1 4-1s2.5 1 4 1 2.5-1 4-1 2.5 1 4 1 2-.5 2-1" />
+                <path d="M3 19h18" />
+            </svg>
+        </span>
+        <span class="logo">Cake<span class="brand-craft">Craft</span></span>
+    </a>
 
     <nav>
         <a href="dashboard.php">Home</a>

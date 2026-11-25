@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 require_once "../database.php";
@@ -24,7 +23,7 @@ $error = "";
 $success = "";
 
 // ==========================================
-// GET CURRENT GCash QR
+// GET CURRENT GCASH QR
 // ==========================================
 
 $stmt = $conn->prepare("
@@ -105,12 +104,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 $upload_directory = "../assets/images/payment/";
 
-                if (!is_dir($upload_directory)) {
+                if (
+                    !is_dir($upload_directory) &&
+                    !mkdir($upload_directory, 0755, true)
+                ) {
 
-                    if (!mkdir($upload_directory, 0755, true)) {
-                        $error = "Unable to create payment image folder.";
-                    }
-
+                    $error = "Unable to create payment image folder.";
                 }
 
                 // ==========================================
@@ -143,7 +142,6 @@ Require all denied
                 ) {
 
                     $error = "The payment image folder is not writable.";
-
                 }
 
                 // ==========================================
@@ -159,8 +157,7 @@ Require all denied
                         bin2hex(random_bytes(16)) .
                         "." . $extension;
 
-                    $destination =
-                        $upload_directory . $new_filename;
+                    $destination = $upload_directory . $new_filename;
 
                     $database_path =
                         "assets/images/payment/" .
@@ -234,9 +231,7 @@ Require all denied
                             ) {
 
                                 $old_filename = basename($old_qr);
-
-                                $old_file =
-                                    $upload_directory . $old_filename;
+                                $old_file = $upload_directory . $old_filename;
 
                                 if (
                                     is_file($old_file) &&
@@ -244,7 +239,6 @@ Require all denied
                                 ) {
                                     @unlink($old_file);
                                 }
-
                             }
 
                             // Refresh current QR
@@ -262,19 +256,12 @@ Require all denied
                             if (is_file($destination)) {
                                 @unlink($destination);
                             }
-
                         }
-
                     }
-
                 }
-
             }
-
         }
-
     }
-
 }
 
 // ==========================================
@@ -289,361 +276,486 @@ $stmt = $conn->prepare("
 ");
 
 $stmt->execute();
-
 $result = $stmt->get_result();
 $settings = $result->fetch_assoc();
-
 $stmt->close();
 
 $current_qr = $settings["gcash_qr_image"] ?? null;
-
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCash QR Settings | CakeCraft Admin</title>
 
-<title>GCash QR Settings | CakeCraft Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/brand-system.css">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <style>
+        :root {
+            --bg: #fffaf7;
+            --bg-soft: #f7eeea;
+            --bg-tint: #f4e5df;
+            --surface: #ffffff;
+            --ink: #3b2724;
+            --ink-soft: #6f5d57;
+            --rose: #c47c78;
+            --rose-deep: #a65a56;
+            --rose-darker: #8c4845;
+            --craft-color: #a65a56;
+            --line: #efe0da;
+            --line-strong: #e0cbc3;
+            --body: 'DM Sans', system-ui, sans-serif;
+            --display: 'Playfair Display', Georgia, serif;
+        }
 
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<style>
+        body {
+            font-family: var(--body);
+            font-size: 16px;
+            line-height: 1.6;
+            background: var(--bg);
+            color: var(--ink);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
 
-:root {
-    --bg: #fffaf7;
-    --bg-soft: #f7eeea;
-    --surface: #ffffff;
-    --ink: #3b2724;
-    --ink-soft: #6f5d57;
-    --rose: #c47c78;
-    --rose-deep: #a65a56;
-    --rose-darker: #8c4845;
-    --line: #efe0da;
-    --line-strong: #e0cbc3;
-    --body: 'DM Sans', sans-serif;
-    --display: 'Playfair Display', Georgia, serif;
-}
+        button,
+        input,
+        select,
+        textarea {
+            font: inherit;
+        }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: var(--body);
-}
+        :focus-visible {
+            outline: 3px solid var(--rose);
+            outline-offset: 3px;
+            border-radius: 4px;
+        }
 
-body {
-    background: var(--bg);
-    color: var(--ink);
-    min-height: 100vh;
-    line-height: 1.6;
-}
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 6%;
+            background: rgba(255, 250, 247, .96);
+            border-bottom: 1px solid var(--line);
+            box-shadow: 0 2px 14px rgba(59, 39, 36, .05);
+            backdrop-filter: blur(12px);
+        }
 
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 18px 6%;
-    background: rgba(255,250,247,.95);
-    border-bottom: 1px solid var(--line);
-}
+        .brand-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-.logo {
-    font-family: var(--display);
-    font-size: 28px;
-    font-weight: 700;
-}
+        .brand-mark {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--ink);
+            line-height: 1;
+        }
 
-.logo span {
-    color: var(--rose);
-}
+        .brand-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: var(--bg-soft);
+            border: 1px solid var(--line);
+            color: var(--craft-color);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
 
-header a {
-    text-decoration: none;
-    color: var(--ink);
-    font-weight: 600;
-}
+        .brand-icon svg {
+            width: 18px;
+            height: 18px;
+        }
 
-.page-heading {
-    padding: 35px 6%;
-    background: var(--bg-soft);
-    border-bottom: 1px solid var(--line);
-}
+        .logo {
+            font-family: var(--display);
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -.01em;
+            color: var(--ink);
+        }
 
-.page-heading h1 {
-    font-family: var(--display);
-    font-size: clamp(28px, 4vw, 40px);
-}
+        .logo span.brand-craft {
+            color: var(--craft-color);
+        }
 
-.page-heading p {
-    color: var(--ink-soft);
-}
+        .admin-badge {
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: var(--bg-soft);
+            border: 1px solid var(--line);
+            color: var(--rose-deep);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .04em;
+        }
 
-.container {
-    max-width: 900px;
-    margin: auto;
-    padding: 35px 20px 70px;
-}
+        header a.dash-link {
+            text-decoration: none;
+            color: var(--ink);
+            font-family: var(--body);
+            font-size: 13px;
+            font-weight: 700;
+            padding: 8px 16px;
+            border: 1.5px solid var(--rose);
+            border-radius: 999px;
+            transition: color .2s ease, background-color .2s ease, border-color .2s ease;
+        }
 
-.card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 28px;
-    margin-bottom: 22px;
-    box-shadow: 0 6px 24px rgba(73,48,45,.06);
-}
+        header a.dash-link:hover {
+            color: var(--rose-deep);
+            background: var(--bg-soft);
+            border-color: var(--rose-deep);
+        }
 
-.card h2 {
-    font-family: var(--display);
-    font-size: 24px;
-    margin-bottom: 10px;
-}
+        .page-heading {
+            padding: 35px 6%;
+            background: var(--bg-soft);
+            border-bottom: 1px solid var(--line);
+        }
 
-.description {
-    color: var(--ink-soft);
-    font-size: 14px;
-    margin-bottom: 20px;
-}
+        .page-heading h1 {
+            font-family: var(--display);
+            font-size: clamp(28px, 4vw, 40px);
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--ink);
+        }
 
-.qr-container {
-    width: 100%;
-    max-width: 380px;
-    min-height: 300px;
-    margin: 20px auto;
-    padding: 20px;
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    background: #fffaf7;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+        .page-heading p {
+            margin-top: 6px;
+            color: var(--ink-soft);
+            font-size: 16px;
+        }
 
-.qr-image {
-    width: 100%;
-    max-width: 340px;
-    max-height: 420px;
-    object-fit: contain;
-    display: block;
-    border-radius: 10px;
-}
+        .container {
+            max-width: 900px;
+            margin: auto;
+            padding: 35px 20px 70px;
+        }
 
-.qr-empty {
-    text-align: center;
-    color: var(--ink-soft);
-    padding: 30px 15px;
-}
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 22px;
+            box-shadow: 0 6px 24px rgba(73, 48, 45, .08);
+        }
 
-.qr-empty .icon {
-    font-size: 65px;
-    margin-bottom: 10px;
-}
+        .card h2 {
+            font-family: var(--display);
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.25;
+            color: var(--ink);
+            margin-bottom: 10px;
+        }
 
-.qr-empty strong {
-    display: block;
-    color: var(--ink);
-    font-size: 17px;
-}
+        .description {
+            color: var(--ink-soft);
+            font-size: 15px;
+            line-height: 1.65;
+            margin-bottom: 20px;
+        }
 
-.qr-empty p {
-    font-size: 13px;
-    margin-top: 6px;
-}
+        .qr-container {
+            width: 100%;
+            max-width: 380px;
+            min-height: 300px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-.form-group {
-    margin-bottom: 20px;
-}
+        .qr-image {
+            width: 100%;
+            max-width: 340px;
+            max-height: 420px;
+            object-fit: contain;
+            display: block;
+            border-radius: 10px;
+        }
 
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 700;
-}
+        .qr-empty {
+            text-align: center;
+            color: var(--ink-soft);
+            padding: 30px 15px;
+        }
 
-.form-group input[type="file"] {
-    width: 100%;
-    padding: 13px;
-    border: 1px solid var(--line-strong);
-    border-radius: 10px;
-    background: white;
-    font-size: 14px;
-}
+        .qr-empty .icon {
+            font-size: 65px;
+            margin-bottom: 10px;
+            color: var(--rose-deep);
+        }
 
-.form-group input:focus {
-    outline: 2px solid var(--rose);
-    outline-offset: 2px;
-}
+        .qr-empty strong {
+            display: block;
+            color: var(--ink);
+            font-size: 17px;
+            font-weight: 700;
+        }
 
-.hint {
-    color: var(--ink-soft);
-    font-size: 13px;
-    margin-top: 7px;
-}
+        .qr-empty p {
+            font-size: 14px;
+            margin-top: 6px;
+        }
 
-.preview {
-    display: none;
-    width: 100%;
-    max-width: 340px;
-    max-height: 400px;
-    object-fit: contain;
-    margin-top: 15px;
-    border-radius: 12px;
-    border: 1px solid var(--line);
-}
+        .form-group {
+            margin-bottom: 20px;
+        }
 
-.btn {
-    display: inline-block;
-    width: 100%;
-    border: none;
-    border-radius: 999px;
-    padding: 14px 22px;
-    background: var(--rose-deep);
-    color: white;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    text-decoration: none;
-    text-align: center;
-    transition: .2s;
-}
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-family: var(--body);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--ink);
+        }
 
-.btn:hover {
-    background: var(--rose-darker);
-}
+        .form-group input[type="file"] {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid var(--line-strong);
+            border-radius: 10px;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: var(--body);
+            font-size: 14px;
+        }
 
-.alert {
-    padding: 15px 18px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    font-size: 14px;
-}
+        .form-group input[type="file"]::file-selector-button {
+            border: none;
+            background: var(--rose);
+            color: #fff;
+            padding: 8px 13px;
+            margin-right: 12px;
+            border-radius: 7px;
+            font-family: var(--body);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
 
-.alert.error {
-    background: #fdecea;
-    border: 1px solid #f3c7c2;
-    color: #9b1c1c;
-}
+        .form-group input[type="file"]::file-selector-button:hover {
+            background: var(--rose-deep);
+        }
 
-.alert.success {
-    background: #e8f6ec;
-    border: 1px solid #bfe3cb;
-    color: #17602f;
-}
+        .form-group input:focus {
+            outline: 2px solid var(--rose);
+            outline-offset: 2px;
+        }
 
-.back-btn {
-    display: inline-block;
-    text-decoration: none;
-    color: var(--rose-deep);
-    font-weight: 600;
-    margin-top: 10px;
-}
+        .hint {
+            color: var(--ink-soft);
+            font-size: 13px;
+            line-height: 1.5;
+            margin-top: 7px;
+        }
 
-@media (max-width: 600px) {
+        .preview {
+            display: none;
+            width: 100%;
+            max-width: 340px;
+            max-height: 400px;
+            object-fit: contain;
+            margin-top: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: var(--surface);
+        }
 
-    header {
-        padding: 14px 5%;
-    }
+        .btn {
+            display: inline-block;
+            width: 100%;
+            border: none;
+            border-radius: 999px;
+            padding: 14px 22px;
+            background: var(--rose-deep);
+            color: #fff;
+            font-family: var(--body);
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
+        }
 
-    .container {
-        padding: 25px 15px 50px;
-    }
+        .btn:hover {
+            background: var(--rose-darker);
+            box-shadow: 0 8px 20px rgba(166, 90, 86, .20);
+            transform: translateY(-1px);
+        }
 
-    .card {
-        padding: 20px;
-    }
+        .alert {
+            padding: 15px 18px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
 
-    .qr-container {
-        min-height: 250px;
-    }
+        .alert.error {
+            background: #f9e9e7;
+            border: 1px solid #efd1cd;
+            color: #963f3b;
+        }
 
-}
+        .alert.success {
+            background: #edf5ed;
+            border: 1px solid #d7e8d8;
+            color: #426c4e;
+        }
 
-</style>
+        .back-btn {
+            display: inline-block;
+            text-decoration: none;
+            color: var(--rose-deep);
+            font-family: var(--body);
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: color .2s ease;
+        }
+
+        .back-btn:hover {
+            color: var(--rose-darker);
+        }
+
+        @media (max-width: 600px) {
+            header {
+                padding: 14px 5%;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+
+            .logo {
+                font-size: 26px;
+            }
+
+            .container {
+                padding: 25px 15px 50px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .qr-container {
+                min-height: 250px;
+            }
+
+            .page-heading {
+                padding: 30px 5%;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                transition-duration: .01ms !important;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
 <header>
-
-    <div class="logo">Cake<span>Craft</span></div>
-
-    <a href="dashboard.php">← Dashboard</a>
-
+    <div class="brand-wrap">
+        <a href="dashboard.php" class="brand-mark" aria-label="CakeCraft Admin Dashboard">
+            <span class="brand-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3v3" />
+                    <path d="M12 6c-1.1 0-2 .7-2 1.6 0 .5.2.9.5 1.4" />
+                    <path d="M5 12h14a2 2 0 0 1 2 2v5H3v-5a2 2 0 0 1 2-2Z" />
+                    <path d="M3 16c1.5 0 2.5-1 4-1s2.5 1 4 1 2.5-1 4-1 2.5 1 4 1 2-.5 2-1" />
+                    <path d="M3 19h18" />
+                </svg>
+            </span>
+            <span class="logo">Cake<span class="brand-craft">Craft</span></span>
+        </a>
+        <span class="admin-badge">ADMIN</span>
+    </div>
+    <a href="dashboard.php" class="dash-link">← Dashboard</a>
 </header>
 
 <section class="page-heading">
-
     <h1>GCash QR Settings</h1>
-
     <p>Upload and manage the GCash QR code displayed to your customers.</p>
-
 </section>
 
 <div class="container">
 
     <?php if ($success !== ""): ?>
-
         <div class="alert success">
             <?php echo htmlspecialchars($success); ?>
         </div>
-
     <?php endif; ?>
 
     <?php if ($error !== ""): ?>
-
         <div class="alert error">
             <?php echo htmlspecialchars($error); ?>
         </div>
-
     <?php endif; ?>
 
     <!-- CURRENT QR CODE -->
-
     <div class="card">
-
         <h2>Current GCash QR Code</h2>
-
         <p class="description">
             This QR code will be displayed on the customer payment page.
         </p>
 
         <div class="qr-container">
-
             <?php if (!empty($current_qr)): ?>
-
                 <img
                     src="../<?php echo htmlspecialchars($current_qr); ?>"
                     alt="Current GCash QR Code"
                     class="qr-image">
-
             <?php else: ?>
-
                 <div class="qr-empty">
-
                     <div class="icon">▦</div>
-
                     <strong>No GCash QR uploaded yet</strong>
-
                     <p>Upload your QR code below to make it visible to customers.</p>
-
                 </div>
-
             <?php endif; ?>
-
         </div>
-
     </div>
 
     <!-- UPLOAD / REPLACE QR -->
-
     <div class="card">
-
         <h2><?php echo !empty($current_qr)
             ? "Replace GCash QR Code"
             : "Upload GCash QR Code"; ?></h2>
@@ -654,17 +766,13 @@ header a {
         </p>
 
         <form method="POST" enctype="multipart/form-data">
-
             <input
                 type="hidden"
                 name="csrf_token"
                 value="<?php echo htmlspecialchars($_SESSION["csrf_token"]); ?>">
 
             <div class="form-group">
-
-                <label for="gcash_qr">
-                    GCash QR Image
-                </label>
+                <label for="gcash_qr">GCash QR Image</label>
 
                 <input
                     type="file"
@@ -681,7 +789,6 @@ header a {
                     id="image_preview"
                     class="preview"
                     alt="Selected GCash QR preview">
-
             </div>
 
             <button type="submit" class="btn">
@@ -689,35 +796,34 @@ header a {
                     ? "Update GCash QR Code"
                     : "Upload GCash QR Code"; ?>
             </button>
-
         </form>
-
     </div>
 
-    <a href="dashboard.php" class="back-btn">
-        ← Back to Dashboard
-    </a>
+    <a href="dashboard.php" class="back-btn">← Back to Dashboard</a>
 
 </div>
 
 <script>
-
 // ==========================================
 // IMAGE PREVIEW
 // ==========================================
 
 const fileInput = document.getElementById("gcash_qr");
 const preview = document.getElementById("image_preview");
+let previewUrl = null;
 
 if (fileInput && preview) {
-
     fileInput.addEventListener("change", function () {
-
         const file = this.files[0];
+
+        if (previewUrl) {
+            URL.revokeObjectURL(previewUrl);
+            previewUrl = null;
+        }
 
         if (!file) {
             preview.style.display = "none";
-            preview.src = "";
+            preview.removeAttribute("src");
             return;
         }
 
@@ -728,34 +834,26 @@ if (fileInput && preview) {
         ];
 
         if (!allowedTypes.includes(file.type)) {
-
             alert("Please select a JPG, PNG, or WEBP image.");
-
             this.value = "";
             preview.style.display = "none";
-            preview.src = "";
-
+            preview.removeAttribute("src");
             return;
         }
 
         if (file.size > 5 * 1024 * 1024) {
-
             alert("The image must not exceed 5 MB.");
-
             this.value = "";
             preview.style.display = "none";
-            preview.src = "";
-
+            preview.removeAttribute("src");
             return;
         }
 
-        preview.src = URL.createObjectURL(file);
+        previewUrl = URL.createObjectURL(file);
+        preview.src = previewUrl;
         preview.style.display = "block";
-
     });
-
 }
-
 </script>
 
 </body>
