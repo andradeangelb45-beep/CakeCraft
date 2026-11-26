@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 require_once "../database.php";
@@ -1296,258 +1295,97 @@ input[type=number] {
 }
 
 .payment-section h3 {
-    font-size: 19px;
-    font-weight: 700;
-    margin-bottom: 13px;
+    font-size: 18px;
+    margin-bottom: 14px;
 }
 
 .payment-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 13px 20px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px 20px;
     align-items: start;
 }
 
 .payment-badge {
     display: inline-block;
-    padding: 5px 12px;
+    padding: 4px 12px;
     border-radius: 999px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
 }
 
 .payment-unpaid {
-    background: #fff1d6;
-    color: #8a5a00;
+    background: #f3f4f6;
+    color: #4b5563;
 }
 
 .payment-pending {
-    background: #e8efff;
-    color: #315a9b;
+    background: #dbeafe;
+    color: #1d4ed8;
 }
 
 .payment-paid {
-    background: #e5f3e8;
-    color: #1f6a37;
+    background: #dcfce7;
+    color: #15803d;
 }
 
 .payment-rejected {
-    background: #fde8e6;
-    color: #9b1c1c;
+    background: #fee2e2;
+    color: #b91c1c;
 }
 
-.payment-proof-item {
-    grid-column: 1 / -1;
+.payment-reason {
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    font-size: 14px;
 }
 
 .payment-proof-container {
     display: flex;
     align-items: center;
-    gap: 14px;
-    margin-top: 7px;
+    gap: 12px;
+    margin-top: 6px;
 }
 
 .payment-proof {
+    width: 76px;
+    height: 110px;
+    max-width: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--line-strong);
     display: block;
-    width: auto;
-    max-width: 120px;
-    max-height: 155px;
-    object-fit: contain;
-    border: 1px solid var(--line);
-    border-radius: 9px;
-    background: var(--surface);
+    flex-shrink: 0;
 }
 
 .payment-link {
-    display: inline-block;
-    color: var(--rose-deep);
+    font-size: 13px;
     font-weight: 600;
-    font-size: 14px;
+    color: var(--rose-deep);
+    text-decoration: none;
 }
 
 .payment-link:hover {
-    color: var(--rose-darker);
     text-decoration: underline;
 }
 
 .verify-payment-button {
     display: inline-block;
-    margin-top: 12px;
-    padding: 11px 18px;
-    border: 0;
+    margin-top: 14px;
+    padding: 9px 16px;
     border-radius: 999px;
     background: var(--rose-deep);
     color: #fff;
+    font-size: 13px;
     font-weight: 700;
     text-decoration: none;
-    transition: background .2s;
 }
 
 .verify-payment-button:hover {
     background: var(--rose-darker);
-}
-
-.page-payment-verification {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0 0 18px;
-    padding: 11px 17px;
-    border-radius: 999px;
-    background: var(--rose-deep);
-    color: #fff;
-    text-decoration: none;
-    font-weight: 700;
-    box-shadow: 0 2px 5px rgba(0,0,0,.08);
-}
-
-.page-payment-verification:hover {
-    background: var(--rose-darker);
-}
-
-.payment-reason {
-    padding: 12px;
-    border-radius: 9px;
-    background: #fde8e6;
-    color: #9b1c1c;
-    margin-top: 10px;
-    font-size: 14px;
-}
-
-@media (max-width: 760px) {
-    .container {
-        padding: 30px 16px 55px;
-    }
-
-    .details {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .span2,
-    .span3 {
-        grid-column: 1 / -1;
-    }
-
-    .card {
-        padding: 20px 17px;
-    }
-
-    .custom-request-content {
-        grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
-        gap: 18px;
-    }
-}
-
-@media (max-width: 600px) {
-    .custom-request-content {
-        grid-template-columns: 1fr;
-    }
-
-    .design-panel {
-        max-width: 320px;
-    }
-
-    .custom-details {
-        grid-template-columns: 1fr 1fr;
-    }
-}
-
-@media (max-width: 480px) {
-    header {
-        align-items: flex-start;
-        gap: 12px;
-        flex-direction: column;
-        padding: 14px 5%;
-    }
-
-    .header-links {
-        width: 100%;
-    }
-
-    .header-links a {
-        padding: 8px 14px;
-    }
-
-    .brand .badge {
-        display: none;
-    }
-
-    .archive-form {
-        margin-left: 0;
-        width: 100%;
-    }
-
-    .archive-form button {
-        width: 100%;
-    }
-
-    .details,
-    .custom-details,
-    .payment-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .custom-details .span2,
-    .custom-details .span3 {
-        grid-column: 1 / -1;
-    }
-
-    .card-header {
-        flex-direction: column;
-    }
-
-    .footer,
-    .status-form,
-    .quote-form {
-        align-items: stretch;
-        flex-direction: column;
-    }
-
-    .status-form button,
-    .quote-form button {
-        width: 100%;
-    }
-
-    .search-form {
-        flex-wrap: wrap;
-    }
-
-    .search-form input {
-        flex-basis: 100%;
-    }
-
-    .quote-form input,
-    .status-form input[type=number],
-    .status-form select,
-    .quote-form select {
-        width: 100%;
-    }
-
-    .section-heading {
-        font-size: 25px;
-    }
-
-    .payment-proof-container {
-        align-items: flex-start;
-        gap: 12px;
-    }
-
-    .payment-proof {
-        max-width: 105px;
-        max-height: 140px;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    html {
-        scroll-behavior: auto;
-    }
-
-    *,
-    *::before,
-    *::after {
-        transition-duration: .01ms !important;
-    }
 }
 </style>
 </head>
@@ -1678,10 +1516,6 @@ input[type=number] {
     </div>
 
 <?php endif; ?>
-
-<a href="verify_payments.php" class="page-payment-verification">
-    💳 Verify GCash Payments
-</a>
 
 <h2 class="section-heading">Regular Cake Orders</h2>
 
