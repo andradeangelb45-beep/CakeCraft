@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 require_once "../database.php";
@@ -12,10 +13,8 @@ $is_success = false;
 $customer_id = (int) $_SESSION["customer_id"];
 
 // Cake options
-$regular_sizes = ["6 inches", "8 inches", "10 inches"];
 $bento_sizes = ["4 inches", "5 inches"];
 $cupcake_sizes = ["6 Pieces", "12 Pieces", "24 Pieces"];
-$layer_options = ["1", "2", "3"];
 
 $allowed_flavors = [
     "Vanilla",
@@ -30,27 +29,10 @@ $allowed_flavors = [
 $allowed_delivery_methods = ["Pickup", "Delivery"];
 $allowed_payment_methods = ["Cash", "GCash"];
 
-// Generate valid cake size values
-$allowed_sizes = [];
-
-foreach ($regular_sizes as $size) {
-    foreach ($layer_options as $layer) {
-        $allowed_sizes[] = $size . " - " . $layer . " " .
-            ($layer === "1" ? "Layer" : "Layers");
-    }
-}
-
-foreach ($bento_sizes as $size) {
-    $allowed_sizes[] = $size . " - 1 Layer";
-}
-
-foreach ($cupcake_sizes as $size) {
-    $allowed_sizes[] = $size;
-}
-
 // Old form values
 $old_type = "";
 $old_base_size = "";
+$old_regular_size = "";
 $old_layers = "";
 $old_size = "";
 $old_flavor = "";
@@ -64,8 +46,10 @@ $old_instructions = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
+    // Get submitted values
     $old_type = trim($_POST["cake_type"] ?? "");
     $old_base_size = trim($_POST["base_size"] ?? "");
+    $old_regular_size = trim($_POST["regular_size"] ?? "");
     $old_layers = trim($_POST["layers"] ?? "");
 
     $old_flavor = trim($_POST["flavor"] ?? "");
@@ -76,16 +60,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $old_delivery_method = trim($_POST["delivery_method"] ?? "Delivery");
     $old_address = trim($_POST["delivery_address"] ?? "");
 
-    // Payment method
     $old_payment_method = trim($_POST["payment_method"] ?? "");
-
     $old_instructions = trim($_POST["special_instructions"] ?? "");
 
     // Construct cake size value
     if ($old_type === "regular") {
 
-        $old_size = $old_base_size . " - " . $old_layers . " " .
-            ($old_layers === "1" ? "Layer" : "Layers");
+        // Accept any positive size, including decimal values
+        if (
+            preg_match('/^\d+(\.\d{1,2})?$/', $old_regular_size) &&
+            (float)$old_regular_size > 0 &&
+            preg_match('/^[1-9]\d*$/', $old_layers)
+        ) {
+            $size_value = (string)(float)$old_regular_size;
+
+            $old_size = $size_value . " inches - " .
+                $old_layers . " " .
+                ((int)$old_layers === 1 ? "Layer" : "Layers");
+        }
 
     } elseif ($old_type === "bento") {
 
@@ -101,23 +93,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $old_address = "";
     }
 
-    // Validate size and flavor
-    if (
-        !in_array($old_size, $allowed_sizes, true) ||
-        !in_array($old_flavor, $allowed_flavors, true)
-    ) {
+    // Validate cake type
+    if (!in_array($old_type, ["regular", "bento", "cupcakes"], true)) {
 
-        $message = "Please select a valid cake size and flavor.";
+        $message = "Please select a valid cake type.";
 
-    } elseif (
-        $old_type === "regular" &&
-        (
-            !in_array($old_base_size, $regular_sizes, true) ||
-            !in_array($old_layers, $layer_options, true)
-        )
-    ) {
+    } elseif ($old_type === "regular" && $old_size === "") {
 
-        $message = "Please select a valid regular cake size and layer.";
+        $message = "Please enter a valid cake size and number of layers.";
 
     } elseif (
         $old_type === "bento" &&
@@ -132,6 +115,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     ) {
 
         $message = "Please select a valid cupcake quantity.";
+
+    } elseif (!in_array($old_flavor, $allowed_flavors, true)) {
+
+        $message = "Please select a valid cake flavor.";
 
     } elseif ($old_color === "") {
 
@@ -253,7 +240,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')"
                         );
 
-                        $quantity = (int) $old_quantity;
+                        $quantity = (int)$old_quantity;
 
                         $stmt->bind_param(
                             "issssisssss",
@@ -283,6 +270,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         // Reset form
                         $old_type = "";
                         $old_base_size = "";
+                        $old_regular_size = "";
                         $old_layers = "";
                         $old_size = "";
                         $old_flavor = "";
@@ -941,22 +929,50 @@ textarea {
 
             <!-- Size and Layers -->
             <div class="grid">
+
                 <div class="field">
                     <label for="base_size">Size *</label>
-                    <select id="base_size" name="base_size" required>
+
+                    <!-- Custom size for Regular Cake -->
+                    <input
+                        type="number"
+                        id="regular_size"
+                        name="regular_size"
+                        min="0.1"
+                        step="0.1"
+                        placeholder="Enter size in inches"
+                        value="<?php echo htmlspecialchars($old_regular_size); ?>"
+                        style="display:none;"
+                        disabled
+                    >
+
+                    <!-- Preset sizes for Bento Cake and Cupcakes -->
+                    <select
+                        id="base_size"
+                        name="base_size"
+                        required
+                        disabled
+                    >
                         <option value="">Select size</option>
                     </select>
                 </div>
 
                 <div class="field" id="layers_field">
                     <label for="layers">Number of Layers *</label>
-                    <select id="layers" name="layers" required>
-                        <option value="">Select layers</option>
-                        <option value="1">1 Layer</option>
-                        <option value="2">2 Layers</option>
-                        <option value="3">3 Layers</option>
-                    </select>
+
+                    <input
+                        type="number"
+                        id="layers"
+                        name="layers"
+                        min="1"
+                        step="1"
+                        placeholder="Enter number of layers"
+                        value="<?php echo htmlspecialchars($old_layers); ?>"
+                        style="display:none;"
+                        disabled
+                    >
                 </div>
+
             </div>
 
             <!-- Flavor -->
@@ -1130,37 +1146,52 @@ textarea {
 </div>
 
 <script>
-// Available sizes by cake type
+// Available preset sizes
 const sizeOptions = {
-    regular: ["6 inches", "8 inches", "10 inches"],
     bento: ["4 inches", "5 inches"],
     cupcakes: ["6 Pieces", "12 Pieces", "24 Pieces"]
 };
 
 const cakeTypeSelect = document.getElementById("cake_type");
+
 const sizeSelect = document.getElementById("base_size");
-const layersSelect = document.getElementById("layers");
+const regularSizeInput = document.getElementById("regular_size");
+
+const layersInput = document.getElementById("layers");
 const layersField = document.getElementById("layers_field");
 
 const previousType = <?php echo json_encode($old_type); ?>;
 const previousSize = <?php echo json_encode($old_base_size); ?>;
+const previousRegularSize = <?php echo json_encode($old_regular_size); ?>;
 const previousLayers = <?php echo json_encode($old_layers); ?>;
 
 // Delivery fields
-const deliveryRadios = document.querySelectorAll('input[name="delivery_method"]');
-const deliveryAddressField = document.getElementById("delivery_address_field");
-const deliveryAddressInput = document.getElementById("delivery_address");
+const deliveryRadios = document.querySelectorAll(
+    'input[name="delivery_method"]'
+);
+
+const deliveryAddressField = document.getElementById(
+    "delivery_address_field"
+);
+
+const deliveryAddressInput = document.getElementById(
+    "delivery_address"
+);
 
 // Toggle address field based on selected delivery method
 function updateDeliveryFields() {
+
     const selectedMethod = document.querySelector(
         'input[name="delivery_method"]:checked'
     );
 
     if (selectedMethod && selectedMethod.value === "Delivery") {
+
         deliveryAddressField.style.display = "";
         deliveryAddressInput.required = true;
+
     } else {
+
         deliveryAddressField.style.display = "none";
         deliveryAddressInput.required = false;
         deliveryAddressInput.value = "";
@@ -1171,67 +1202,123 @@ deliveryRadios.forEach(radio => {
     radio.addEventListener("change", updateDeliveryFields);
 });
 
-// Initialize delivery fields on page load
+// Initialize delivery fields
 updateDeliveryFields();
 
-// Update size choices based on cake type
+
+// Update size and layer fields based on cake type
 function updateSizes(selectedSize = "") {
+
     const cakeType = cakeTypeSelect.value;
 
+    // Reset preset size options
     sizeSelect.innerHTML = '<option value="">Select size</option>';
 
-    if (!cakeType || !sizeOptions[cakeType]) {
+    // No cake type selected
+    if (!cakeType) {
+
+        sizeSelect.style.display = "";
         sizeSelect.disabled = true;
+        sizeSelect.required = true;
+
+        regularSizeInput.style.display = "none";
+        regularSizeInput.disabled = true;
+        regularSizeInput.required = false;
+
         layersField.style.display = "none";
-        layersSelect.required = false;
-        layersSelect.value = "";
+        layersInput.style.display = "none";
+        layersInput.disabled = true;
+        layersInput.required = false;
+
         return;
     }
 
-    sizeSelect.disabled = false;
-
-    sizeOptions[cakeType].forEach(size => {
-        const option = document.createElement("option");
-        option.value = size;
-        option.textContent = size;
-
-        if (size === selectedSize) {
-            option.selected = true;
-        }
-
-        sizeSelect.appendChild(option);
-    });
-
-    // Regular cakes require layer selection
+    // REGULAR CAKE
     if (cakeType === "regular") {
+
+        // Show custom size input
+        sizeSelect.style.display = "none";
+        sizeSelect.disabled = true;
+        sizeSelect.required = false;
+
+        regularSizeInput.style.display = "";
+        regularSizeInput.disabled = false;
+        regularSizeInput.required = true;
+
+        // Show custom layers input
         layersField.style.display = "";
-        layersSelect.required = true;
-    } else {
-        layersField.style.display = "none";
-        layersSelect.required = false;
-        layersSelect.value = "";
+        layersInput.style.display = "";
+        layersInput.disabled = false;
+        layersInput.required = true;
+
+        return;
+    }
+
+    // BENTO CAKE AND CUPCAKES
+    regularSizeInput.style.display = "none";
+    regularSizeInput.disabled = true;
+    regularSizeInput.required = false;
+    regularSizeInput.value = "";
+
+    layersField.style.display = "none";
+    layersInput.style.display = "none";
+    layersInput.disabled = true;
+    layersInput.required = false;
+    layersInput.value = "";
+
+    // Show preset size dropdown
+    sizeSelect.style.display = "";
+    sizeSelect.disabled = false;
+    sizeSelect.required = true;
+
+    if (sizeOptions[cakeType]) {
+
+        sizeOptions[cakeType].forEach(size => {
+
+            const option = document.createElement("option");
+
+            option.value = size;
+            option.textContent = size;
+
+            if (size === selectedSize) {
+                option.selected = true;
+            }
+
+            sizeSelect.appendChild(option);
+        });
     }
 }
 
-// Initialize form
+
+// When cake type changes
 cakeTypeSelect.addEventListener("change", function () {
+
     updateSizes();
-    layersSelect.value = "";
+
+    regularSizeInput.value = "";
+    layersInput.value = "";
+    sizeSelect.value = "";
 });
 
-// Restore values after validation error
+
+// Restore previous values after validation error
 if (previousType) {
+
     cakeTypeSelect.value = previousType;
+
     updateSizes(previousSize);
 
     if (previousType === "regular") {
-        layersSelect.value = previousLayers;
+
+        regularSizeInput.value = previousRegularSize;
+        layersInput.value = previousLayers;
     }
+
 } else {
-    sizeSelect.disabled = true;
-    layersField.style.display = "none";
-    layersSelect.required = false;
+
+    updateSizes();
 }
 </script>
+
 </body>
 </html>

@@ -26,7 +26,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["restore_order"])) {
         $order_id = (int)($_POST["order_id"] ?? 0);
 
         if ($order_id > 0) {
-            $stmt = $conn->prepare("UPDATE orders SET archived_at = NULL WHERE id = ? AND archived_at IS NOT NULL");
+            $stmt = $conn->prepare("
+                UPDATE orders
+                SET archived_at = NULL
+                WHERE id = ?
+                AND archived_at IS NOT NULL
+                AND admin_removed_at IS NULL
+            ");
+
             $stmt->bind_param("i", $order_id);
             $stmt->execute();
 
@@ -36,7 +43,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["restore_order"])) {
                 $message = "Order not found or already restored.";
                 $message_type = "error";
             }
+
             $stmt->close();
+        } else {
+            $message = "Invalid order ID.";
+            $message_type = "error";
         }
     }
 }
@@ -52,7 +63,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["restore_custom_reques
         $request_id = (int)($_POST["request_id"] ?? 0);
 
         if ($request_id > 0) {
-            $stmt = $conn->prepare("UPDATE custom_cake_requests SET archived_at = NULL WHERE id = ? AND archived_at IS NOT NULL");
+            $stmt = $conn->prepare("
+                UPDATE custom_cake_requests
+                SET archived_at = NULL
+                WHERE id = ?
+                AND archived_at IS NOT NULL
+                AND admin_removed_at IS NULL
+            ");
+
             $stmt->bind_param("i", $request_id);
             $stmt->execute();
 
@@ -62,7 +80,144 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["restore_custom_reques
                 $message = "Request not found or already restored.";
                 $message_type = "error";
             }
+
             $stmt->close();
+        } else {
+            $message = "Invalid request ID.";
+            $message_type = "error";
+        }
+    }
+}
+
+/* ==========================================
+   PERMANENT DELETE REGULAR ORDER
+========================================== */
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["permanent_delete_order"])) {
+    if (!hash_equals($_SESSION["archive_csrf"], $_POST["csrf_token"] ?? "")) {
+        $message = "Invalid request. Please try again.";
+        $message_type = "error";
+    } else {
+        $order_id = (int)($_POST["order_id"] ?? 0);
+
+        if ($order_id > 0) {
+            try {
+                $stmt = $conn->prepare("
+                    DELETE FROM orders
+                    WHERE id = ?
+                    AND archived_at IS NOT NULL
+                    AND admin_removed_at IS NULL
+                    AND order_status IN ('Completed', 'Cancelled')
+                ");
+
+                $stmt->bind_param("i", $order_id);
+                $stmt->execute();
+
+                if ($stmt->affected_rows > 0) {
+                    $message = "Order #{$order_id} was permanently deleted.";
+                } else {
+                    $message = "Order could not be permanently deleted. It may not be archived or its status is not Completed or Cancelled.";
+                    $message_type = "error";
+                }
+
+                $stmt->close();
+
+            } catch (Throwable $e) {
+                $message = "Unable to permanently delete this order. It may be connected to other records.";
+                $message_type = "error";
+            }
+        } else {
+            $message = "Invalid order ID.";
+            $message_type = "error";
+        }
+    }
+}
+
+/* ==========================================
+   PERMANENT DELETE CUSTOM CAKE REQUEST
+   Also deletes its uploaded design image
+========================================== */
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["permanent_delete_custom_request"])) {
+    if (!hash_equals($_SESSION["archive_csrf"], $_POST["csrf_token"] ?? "")) {
+        $message = "Invalid request. Please try again.";
+        $message_type = "error";
+    } else {
+        $request_id = (int)($_POST["request_id"] ?? 0);
+
+        if ($request_id > 0) {
+            try {
+                /* GET IMAGE FILE NAME FIRST */
+                $image_stmt = $conn->prepare("
+                    SELECT design_image
+                    FROM custom_cake_requests
+                    WHERE id = ?
+                    AND archived_at IS NOT NULL
+                    AND admin_removed_at IS NULL
+                    AND request_status IN ('Completed', 'Cancelled')
+                    LIMIT 1
+                ");
+
+                $image_stmt->bind_param("i", $request_id);
+                $image_stmt->execute();
+
+                $image_result = $image_stmt->get_result();
+                $request_data = $image_result->fetch_assoc();
+
+                $image_stmt->close();
+
+                if (!$request_data) {
+                    $message = "Request could not be permanently deleted. It may not be archived or its status is not Completed or Cancelled.";
+                    $message_type = "error";
+                } else {
+                    $design_image = trim((string)($request_data["design_image"] ?? ""));
+
+                    /* DELETE DATABASE RECORD */
+                    $delete_stmt = $conn->prepare("
+                        DELETE FROM custom_cake_requests
+                        WHERE id = ?
+                        AND archived_at IS NOT NULL
+                        AND admin_removed_at IS NULL
+                        AND request_status IN ('Completed', 'Cancelled')
+                    ");
+
+                    $delete_stmt->bind_param("i", $request_id);
+                    $delete_stmt->execute();
+
+                    $deleted = $delete_stmt->affected_rows > 0;
+                    $delete_stmt->close();
+
+                    if ($deleted) {
+                        $image_deleted = true;
+
+                        /* DELETE UPLOADED IMAGE AFTER DB DELETION */
+                        if ($design_image !== "") {
+                            $filename = basename(str_replace("\\", "/", $design_image));
+
+                            $image_path = __DIR__ . "/../assets/images/custom_requests/" . $filename;
+
+                            if (is_file($image_path)) {
+                                $image_deleted = unlink($image_path);
+                            }
+                        }
+
+                        if ($image_deleted) {
+                            $message = "Custom cake request #{$request_id} and its uploaded image were permanently deleted.";
+                        } else {
+                            $message = "Custom cake request #{$request_id} was deleted, but its uploaded image could not be removed. Please check the image folder.";
+                            $message_type = "error";
+                        }
+                    } else {
+                        $message = "Request could not be permanently deleted.";
+                        $message_type = "error";
+                    }
+                }
+
+            } catch (Throwable $e) {
+                $message = "Unable to permanently delete this custom cake request. Please check its database relationships and image column.";
+                $message_type = "error";
+            }
+        } else {
+            $message = "Invalid request ID.";
+            $message_type = "error";
         }
     }
 }
@@ -79,17 +234,51 @@ $search_like = "%" . $search . "%";
 $orders = [];
 
 if ($search !== "") {
-    $stmt = $conn->prepare("SELECT * FROM orders WHERE archived_at IS NOT NULL AND (CAST(id AS CHAR) LIKE ? OR CAST(customer_id AS CHAR) LIKE ?) ORDER BY archived_at DESC");
-    $stmt->bind_param("ss", $search_like, $search_like);
+    $stmt = $conn->prepare("
+        SELECT
+            orders.*,
+            COALESCE(cake_options.cake_name, orders.cake_name_snapshot) AS cake_name,
+            COALESCE(cake_sizes.size_name, orders.cake_size_snapshot) AS size_name
+        FROM orders
+        LEFT JOIN cake_options
+            ON orders.cake_id = cake_options.id
+        LEFT JOIN cake_sizes
+            ON orders.cake_size_id = cake_sizes.id
+        WHERE orders.archived_at IS NOT NULL
+        AND orders.admin_removed_at IS NULL
+        AND (
+            CAST(orders.id AS CHAR) LIKE ?
+            OR CAST(orders.customer_id AS CHAR) LIKE ?
+            OR COALESCE(cake_options.cake_name, orders.cake_name_snapshot) LIKE ?
+        )
+        ORDER BY orders.archived_at DESC
+    ");
+
+    $stmt->bind_param("sss", $search_like, $search_like, $search_like);
     $stmt->execute();
     $result = $stmt->get_result();
 
     while ($row = $result->fetch_assoc()) {
         $orders[] = $row;
     }
+
     $stmt->close();
+
 } else {
-    $result = $conn->query("SELECT * FROM orders WHERE archived_at IS NOT NULL ORDER BY archived_at DESC");
+    $result = $conn->query("
+        SELECT
+            orders.*,
+            COALESCE(cake_options.cake_name, orders.cake_name_snapshot) AS cake_name,
+            COALESCE(cake_sizes.size_name, orders.cake_size_snapshot) AS size_name
+        FROM orders
+        LEFT JOIN cake_options
+            ON orders.cake_id = cake_options.id
+        LEFT JOIN cake_sizes
+            ON orders.cake_size_id = cake_sizes.id
+        WHERE orders.archived_at IS NOT NULL
+        AND orders.admin_removed_at IS NULL
+        ORDER BY orders.archived_at DESC
+    ");
 
     if ($result) {
         while ($row = $result->fetch_assoc()) {
@@ -104,7 +293,18 @@ if ($search !== "") {
 $custom_requests = [];
 
 if ($search !== "") {
-    $stmt = $conn->prepare("SELECT * FROM custom_cake_requests WHERE archived_at IS NOT NULL AND (CAST(id AS CHAR) LIKE ? OR CAST(customer_id AS CHAR) LIKE ?) ORDER BY archived_at DESC");
+    $stmt = $conn->prepare("
+        SELECT *
+        FROM custom_cake_requests
+        WHERE archived_at IS NOT NULL
+        AND admin_removed_at IS NULL
+        AND (
+            CAST(id AS CHAR) LIKE ?
+            OR CAST(customer_id AS CHAR) LIKE ?
+        )
+        ORDER BY archived_at DESC
+    ");
+
     $stmt->bind_param("ss", $search_like, $search_like);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -112,9 +312,17 @@ if ($search !== "") {
     while ($row = $result->fetch_assoc()) {
         $custom_requests[] = $row;
     }
+
     $stmt->close();
+
 } else {
-    $result = $conn->query("SELECT * FROM custom_cake_requests WHERE archived_at IS NOT NULL ORDER BY archived_at DESC");
+    $result = $conn->query("
+        SELECT *
+        FROM custom_cake_requests
+        WHERE archived_at IS NOT NULL
+        AND admin_removed_at IS NULL
+        ORDER BY archived_at DESC
+    ");
 
     if ($result) {
         while ($row = $result->fetch_assoc()) {
@@ -139,10 +347,15 @@ function e($value) {
 
 function get_first_value(array $row, array $keys, $default = "—") {
     foreach ($keys as $key) {
-        if (array_key_exists($key, $row) && $row[$key] !== null && $row[$key] !== "") {
+        if (
+            array_key_exists($key, $row) &&
+            $row[$key] !== null &&
+            $row[$key] !== ""
+        ) {
             return $row[$key];
         }
     }
+
     return $default;
 }
 
@@ -150,9 +363,11 @@ function format_money($value) {
     if ($value === "—" || $value === null || $value === "") {
         return "—";
     }
+
     if (is_numeric($value)) {
         return "₱" . number_format((float)$value, 2);
     }
+
     return e($value);
 }
 
@@ -179,6 +394,7 @@ function display_order_details(array $row, $is_custom = false) {
 
     foreach ($possible_fields as $label => $keys) {
         $value = get_first_value($row, $keys, "");
+
         if ($value !== "") {
             $details[] = "<span><b>" . e($label) . ":</b> " . e($value) . "</span>";
         }
@@ -198,6 +414,7 @@ function display_order_details(array $row, $is_custom = false) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Archived Orders | CakeCraft Admin</title>
 <link rel="stylesheet" href="../assets/css/brand-system.css">
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap');
 
@@ -471,12 +688,40 @@ h1 {
 }
 
 .btn:hover { transform: translateY(-1px); }
-.btn-primary { background: var(--rose-deep); color: #fff; }
+
+.btn-primary {
+    background: var(--rose-deep);
+    color: #fff;
+}
+
 .btn-primary:hover { background: var(--rose-darker); }
-.btn-secondary { background: var(--bg-soft); color: var(--ink); border: 1px solid var(--line); }
+
+.btn-secondary {
+    background: var(--bg-soft);
+    color: var(--ink);
+    border: 1px solid var(--line);
+}
+
 .btn-secondary:hover { background: var(--bg-tint); }
-.btn-restore { background: var(--brand-green-bg); color: var(--brand-green); border: 1px solid #d7e8d8; }
+
+.btn-restore {
+    background: var(--brand-green-bg);
+    color: var(--brand-green);
+    border: 1px solid #d7e8d8;
+}
+
 .btn-restore:hover { background: #dcecdc; }
+
+.btn-delete {
+    background: var(--brand-red-bg);
+    color: var(--brand-red);
+    border: 1px solid #efd1cd;
+}
+
+.btn-delete:hover {
+    background: #f3d9d6;
+    border-color: var(--brand-red);
+}
 
 .section-title {
     margin: 28px 0 13px;
@@ -537,8 +782,15 @@ h1 {
     text-transform: capitalize;
 }
 
-.tag.status-completed { background: var(--brand-green-bg); color: var(--brand-green); }
-.tag.status-cancelled { background: var(--brand-red-bg); color: var(--brand-red); }
+.tag.status-completed {
+    background: var(--brand-green-bg);
+    color: var(--brand-green);
+}
+
+.tag.status-cancelled {
+    background: var(--brand-red-bg);
+    color: var(--brand-red);
+}
 
 .meta {
     display: grid;
@@ -549,7 +801,10 @@ h1 {
     overflow-wrap: anywhere;
 }
 
-.meta b, .details b { color: var(--ink); font-weight: 700; }
+.meta b, .details b {
+    color: var(--ink);
+    font-weight: 700;
+}
 
 .details {
     display: flex;
@@ -576,8 +831,19 @@ h1 {
     border-top: 1px solid var(--line);
 }
 
-.card-footer form { margin: 0; }
-.archived-date { color: var(--ink-soft); font-size: 11px; }
+.card-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.card-actions form { margin: 0; }
+
+.archived-date {
+    color: var(--ink-soft);
+    font-size: 11px;
+}
 
 .empty {
     padding: 27px 20px;
@@ -608,6 +874,9 @@ h1 {
     .card { padding: 15px; }
     .card-head { flex-wrap: wrap; }
     .card-footer { align-items: flex-start; }
+    .card-actions { width: 100%; }
+    .card-actions form { flex: 1; }
+    .card-actions .btn { width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -615,14 +884,16 @@ h1 {
 }
 </style>
 </head>
+
 <body>
+
 <header>
     <div class="brand-wrap">
         <a class="brand" href="dashboard.php" aria-label="CakeCraft Admin Dashboard">
             <span class="brand-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 3v3" />
-                    <path d="M12 6c-1.1 0-2 .7-2 1.6 0 .5.2.9.5 1.4" />
+                    <path d="M12 6c-1.1 0-2 .7-2 1.6.2.5.2.9.5 1.4" />
                     <path d="M5 12h14a2 2 0 0 1 2 2v5H3v-5a2 2 0 0 1 2-2Z" />
                     <path d="M3 16c1.5 0 2.5-1 4-1s2.5 1 4 1 2.5-1 4-1 2.5 1 4 1 2-.5 2-1" />
                     <path d="M3 19h18" />
@@ -630,8 +901,10 @@ h1 {
             </span>
             <span class="brand-name">Cake<span class="brand-craft">Craft</span></span>
         </a>
+
         <span class="admin-badge">ADMIN</span>
     </div>
+
     <nav class="header-links" aria-label="Admin navigation">
         <a href="orders.php">Manage Orders</a>
         <a href="dashboard.php">Dashboard</a>
@@ -641,106 +914,275 @@ h1 {
 <main>
     <div class="page-heading">
         <h1>Archived Orders</h1>
-        <p class="subtitle">View archived regular orders and custom cake requests. Restore an item to return it to Manage Orders.</p>
+        <p class="subtitle">
+            View archived regular orders and custom cake requests.
+            Restore an item to return it to Manage Orders, or permanently delete it.
+            Uploaded design images for custom requests will also be deleted.
+        </p>
     </div>
 
     <?php if ($message !== ""): ?>
-        <div class="notice <?= $message_type === "error" ? "error" : "" ?>" role="status"><?= e($message) ?></div>
+        <div class="notice <?= $message_type === "error" ? "error" : "" ?>" role="status">
+            <?= e($message) ?>
+        </div>
     <?php endif; ?>
 
     <section class="stats" aria-label="Archive summary">
-        <div class="stat"><div class="label">Total Archived</div><div class="number"><?= $total_archived ?></div></div>
-        <div class="stat"><div class="label">Regular Orders</div><div class="number"><?= $regular_count ?></div></div>
-        <div class="stat"><div class="label">Custom Cake Requests</div><div class="number"><?= $custom_count ?></div></div>
+        <div class="stat">
+            <div class="label">Total Archived</div>
+            <div class="number"><?= $total_archived ?></div>
+        </div>
+
+        <div class="stat">
+            <div class="label">Regular Orders</div>
+            <div class="number"><?= $regular_count ?></div>
+        </div>
+
+        <div class="stat">
+            <div class="label">Custom Cake Requests</div>
+            <div class="number"><?= $custom_count ?></div>
+        </div>
     </section>
 
     <form class="toolbar" method="GET" role="search">
-        <input type="text" name="search" value="<?= e($search) ?>" placeholder="Search by order ID or customer ID..." aria-label="Search by order ID or customer ID">
+        <input
+            type="text"
+            name="search"
+            value="<?= e($search) ?>"
+            placeholder="Search by order ID or customer ID..."
+            aria-label="Search by order ID or customer ID"
+        >
+
         <button class="btn btn-primary" type="submit">Search</button>
-        <?php if ($search !== ""): ?><a class="btn btn-secondary" href="archive_orders.php">Clear</a><?php endif; ?>
+
+        <?php if ($search !== ""): ?>
+            <a class="btn btn-secondary" href="archive_orders.php">Clear</a>
+        <?php endif; ?>
     </form>
 
+    <!-- REGULAR ORDERS -->
     <h2 class="section-title">Regular Orders</h2>
+
     <?php if (!$orders): ?>
         <div class="empty">No archived regular orders found.</div>
     <?php else: ?>
+
         <div class="cards">
+
         <?php foreach ($orders as $order):
+
             $order_id = (int)($order["id"] ?? 0);
             $status = get_first_value($order, ["order_status", "status"]);
-            $status_class = strtolower($status) === "completed" ? "status-completed" : (strtolower($status) === "cancelled" ? "status-cancelled" : "");
-            $customer = get_first_value($order, ["customer_name", "name"], "Customer ID: " . get_first_value($order, ["customer_id"], "—"));
+
+            $status_class = strtolower($status) === "completed"
+                ? "status-completed"
+                : (strtolower($status) === "cancelled" ? "status-cancelled" : "");
+
+            $customer = get_first_value(
+                $order,
+                ["customer_name", "name"],
+                "Customer ID: " . get_first_value($order, ["customer_id"], "—")
+            );
+
             $payment_method = get_first_value($order, ["payment_method"]);
             $payment_status = get_first_value($order, ["payment_status"]);
             $archived_at = get_first_value($order, ["archived_at"]);
-            $total = get_first_value($order, ["total_amount", "total_price", "amount", "grand_total"]);
-            $order_date = get_first_value($order, ["order_date", "created_at", "date_ordered"]);
+
+            $total = get_first_value(
+                $order,
+                ["total_amount", "total_price", "amount", "grand_total"]
+            );
+
+            $order_date = get_first_value(
+                $order,
+                ["order_date", "created_at", "date_ordered"]
+            );
+
+            $can_remove = in_array($status, ["Completed", "Cancelled"], true)
+                && !empty($order["archived_at"]);
+
         ?>
+
             <article class="card">
+
                 <div class="card-head">
                     <h3>Order #<?= $order_id ?></h3>
-                    <span class="tag <?= e($status_class) ?>"><?= e($status) ?></span>
+                    <span class="tag <?= e($status_class) ?>">
+                        <?= e($status) ?>
+                    </span>
                 </div>
+
                 <div class="meta">
                     <span><b>Customer:</b> <?= e($customer) ?></span>
                     <span><b>Order Date:</b> <?= e($order_date) ?></span>
                     <span><b>Payment:</b> <?= e($payment_method) ?> — <?= e($payment_status) ?></span>
                     <span><b>Total:</b> <?= format_money($total) ?></span>
                 </div>
-                <div class="details"><?= display_order_details($order, false) ?></div>
-                <div class="card-footer">
-                    <span class="archived-date">Archived: <?= e($archived_at) ?></span>
-                    <form method="POST" onsubmit="return confirm('Restore order #<?= $order_id ?> to Manage Orders?');">
-                        <input type="hidden" name="csrf_token" value="<?= e($_SESSION["archive_csrf"]) ?>">
-                        <input type="hidden" name="order_id" value="<?= $order_id ?>">
-                        <button class="btn btn-restore" type="submit" name="restore_order">Restore</button>
-                    </form>
+
+                <div class="details">
+                    <?= display_order_details($order, false) ?>
                 </div>
+
+                <div class="card-footer">
+
+                    <span class="archived-date">
+                        Archived: <?= e($archived_at) ?>
+                    </span>
+
+                    <div class="card-actions">
+
+                        <!-- RESTORE -->
+                        <form
+                            method="POST"
+                            onsubmit="return confirm('Restore order #<?= $order_id ?> to Manage Orders?');"
+                        >
+                            <input type="hidden" name="csrf_token" value="<?= e($_SESSION["archive_csrf"]) ?>">
+                            <input type="hidden" name="order_id" value="<?= $order_id ?>">
+
+                            <button class="btn btn-restore" type="submit" name="restore_order">
+                                Restore
+                            </button>
+                        </form>
+
+                        <!-- PERMANENT DELETE -->
+                        <?php if ($can_remove): ?>
+                            <form
+                                method="POST"
+                                onsubmit="return confirm('PERMANENTLY DELETE order #<?= $order_id ?>? This action cannot be undone.');"
+                            >
+                                <input type="hidden" name="csrf_token" value="<?= e($_SESSION["archive_csrf"]) ?>">
+                                <input type="hidden" name="order_id" value="<?= $order_id ?>">
+
+                                <button class="btn btn-delete" type="submit" name="permanent_delete_order">
+                                    Permanent Delete
+                                </button>
+                            </form>
+                        <?php endif; ?>
+
+                    </div>
+                </div>
+
             </article>
+
         <?php endforeach; ?>
+
         </div>
+
     <?php endif; ?>
 
+
+    <!-- CUSTOM CAKE REQUESTS -->
     <h2 class="section-title">Custom Cake Requests</h2>
+
     <?php if (!$custom_requests): ?>
         <div class="empty">No archived custom cake requests found.</div>
     <?php else: ?>
+
         <div class="cards">
+
         <?php foreach ($custom_requests as $request):
+
             $request_id = (int)($request["id"] ?? 0);
             $status = get_first_value($request, ["request_status", "status"]);
-            $status_class = strtolower($status) === "completed" ? "status-completed" : (strtolower($status) === "cancelled" ? "status-cancelled" : "");
-            $customer = get_first_value($request, ["customer_name", "name"], "Customer ID: " . get_first_value($request, ["customer_id"], "—"));
+
+            $status_class = strtolower($status) === "completed"
+                ? "status-completed"
+                : (strtolower($status) === "cancelled" ? "status-cancelled" : "");
+
+            $customer = get_first_value(
+                $request,
+                ["customer_name", "name"],
+                "Customer ID: " . get_first_value($request, ["customer_id"], "—")
+            );
+
             $payment_method = get_first_value($request, ["payment_method"]);
             $payment_status = get_first_value($request, ["payment_status"]);
             $archived_at = get_first_value($request, ["archived_at"]);
-            $price = get_first_value($request, ["quoted_price", "quote_price", "total_price", "price"]);
-            $request_date = get_first_value($request, ["request_date", "created_at", "date_requested"]);
+
+            $price = get_first_value(
+                $request,
+                ["quoted_price", "quote_price", "total_price", "price"]
+            );
+
+            $request_date = get_first_value(
+                $request,
+                ["request_date", "created_at", "date_requested"]
+            );
+
+            $can_remove = in_array($status, ["Completed", "Cancelled"], true)
+                && !empty($request["archived_at"]);
+
         ?>
+
             <article class="card">
+
                 <div class="card-head">
                     <h3>Custom Request #<?= $request_id ?></h3>
-                    <span class="tag <?= e($status_class) ?>"><?= e($status) ?></span>
+
+                    <span class="tag <?= e($status_class) ?>">
+                        <?= e($status) ?>
+                    </span>
                 </div>
+
                 <div class="meta">
                     <span><b>Customer:</b> <?= e($customer) ?></span>
                     <span><b>Request Date:</b> <?= e($request_date) ?></span>
                     <span><b>Payment:</b> <?= e($payment_method) ?> — <?= e($payment_status) ?></span>
                     <span><b>Quoted Price:</b> <?= format_money($price) ?></span>
                 </div>
-                <div class="details"><?= display_order_details($request, true) ?></div>
-                <div class="card-footer">
-                    <span class="archived-date">Archived: <?= e($archived_at) ?></span>
-                    <form method="POST" onsubmit="return confirm('Restore custom request #<?= $request_id ?> to Manage Orders?');">
-                        <input type="hidden" name="csrf_token" value="<?= e($_SESSION["archive_csrf"]) ?>">
-                        <input type="hidden" name="request_id" value="<?= $request_id ?>">
-                        <button class="btn btn-restore" type="submit" name="restore_custom_request">Restore</button>
-                    </form>
+
+                <div class="details">
+                    <?= display_order_details($request, true) ?>
                 </div>
+
+                <div class="card-footer">
+
+                    <span class="archived-date">
+                        Archived: <?= e($archived_at) ?>
+                    </span>
+
+                    <div class="card-actions">
+
+                        <!-- RESTORE -->
+                        <form
+                            method="POST"
+                            onsubmit="return confirm('Restore custom request #<?= $request_id ?> to Manage Orders?');"
+                        >
+                            <input type="hidden" name="csrf_token" value="<?= e($_SESSION["archive_csrf"]) ?>">
+                            <input type="hidden" name="request_id" value="<?= $request_id ?>">
+
+                            <button class="btn btn-restore" type="submit" name="restore_custom_request">
+                                Restore
+                            </button>
+                        </form>
+
+                        <!-- PERMANENT DELETE -->
+                        <?php if ($can_remove): ?>
+                            <form
+                                method="POST"
+                                onsubmit="return confirm('PERMANENTLY DELETE custom request #<?= $request_id ?> AND its uploaded design image? This action cannot be undone.');"
+                            >
+                                <input type="hidden" name="csrf_token" value="<?= e($_SESSION["archive_csrf"]) ?>">
+                                <input type="hidden" name="request_id" value="<?= $request_id ?>">
+
+                                <button class="btn btn-delete" type="submit" name="permanent_delete_custom_request">
+                                    Permanent Delete
+                                </button>
+                            </form>
+                        <?php endif; ?>
+
+                    </div>
+                </div>
+
             </article>
+
         <?php endforeach; ?>
+
         </div>
+
     <?php endif; ?>
+
 </main>
+
 </body>
 </html>

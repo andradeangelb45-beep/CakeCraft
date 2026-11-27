@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 require_once "../database.php";
@@ -56,6 +57,7 @@ if (!$cake) {
 }
 
 // Get selected size and price
+// Accept any size saved under the selected cake
 $stmt = $conn->prepare(
     "SELECT id, size_name, price
      FROM cake_sizes
@@ -68,59 +70,8 @@ $stmt->execute();
 $size = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
+// Make sure selected size belongs to the selected cake
 if (!$size) {
-    exit("Selected cake size is not available.");
-}
-
-// Validate size based on cake category
-$category = $cake["category"];
-
-if ($category === "Bento Cake") {
-
-    $allowed_sizes = [
-        "4 inches - 1 Layer",
-        "5 inches - 1 Layer"
-    ];
-
-} elseif ($category === "Cupcakes") {
-
-    $allowed_sizes = [
-        "6 Pieces",
-        "12 Pieces",
-        "24 Pieces"
-    ];
-
-} else {
-
-    // Regular cake categories
-    $allowed_sizes = [];
-
-    foreach ([6, 8, 10] as $inches) {
-
-        foreach ([1, 2, 3] as $layers) {
-
-            $layer_text = ($layers === 1)
-                ? "Layer"
-                : "Layers";
-
-            $allowed_sizes[] =
-                "{$inches} inches - {$layers} {$layer_text}";
-        }
-    }
-
-    // Support legacy size labels
-    $allowed_sizes = array_merge(
-        $allowed_sizes,
-        [
-            "6 inches",
-            "8 inches",
-            "10 inches"
-        ]
-    );
-}
-
-// Validate selected size
-if (!in_array($size["size_name"], $allowed_sizes, true)) {
     header("Location: customize.php?cake_id=" . $cake_id);
     exit();
 }

@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 require_once "../database.php";
@@ -263,13 +264,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_status"])) {
         }
     }
 
-    /*
-       REDIRECT FIX:
-       If update succeeds, show the newly selected status filter.
-       If there's an error, retain the previous filter.
-       Completed orders are NOT automatically archived.
-    */
-
     $return_filter = ($fee_error || $payment_error)
         ? ($_POST["filter"] ?? "")
         : $status;
@@ -440,12 +434,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_custom_request
         }
     }
 
-    /*
-       REDIRECT FIX FOR CUSTOM REQUESTS:
-       Show the newly selected status after a successful update.
-       Keep the previous filter if GCash payment verification is required.
-    */
-
     $return_filter = $payment_error
         ? ($_POST["filter"] ?? "")
         : $request_status;
@@ -511,17 +499,18 @@ if ($custom_count_result) {
 
 /*
 ========================================================
-REGULAR ORDERS QUERY - UPDATED
+REGULAR ORDERS QUERY - SNAPSHOT SUPPORT
 ========================================================
-LEFT JOIN is used so restored orders remain visible even
-if their customer or cake reference is missing.
+COALESCE uses the current cake and size names when available.
+If the cake or size has been permanently deleted, the saved
+snapshot values will be displayed instead.
 */
 
 $base_sql = "
     SELECT orders.*,
            customers.email,
-           cake_options.cake_name,
-           cake_sizes.size_name
+           COALESCE(cake_options.cake_name, orders.cake_name_snapshot) AS cake_name,
+           COALESCE(cake_sizes.size_name, orders.cake_size_snapshot) AS size_name
     FROM orders
     LEFT JOIN customers
         ON orders.customer_id = customers.id
@@ -546,7 +535,7 @@ if ($search !== "") {
     $conditions[] = "(
         CAST(orders.id AS CHAR) LIKE ?
         OR orders.customer_name LIKE ?
-        OR cake_options.cake_name LIKE ?
+        OR COALESCE(cake_options.cake_name, orders.cake_name_snapshot) LIKE ?
         OR orders.contact_number LIKE ?
         OR customers.email LIKE ?
     )";
@@ -1563,9 +1552,14 @@ input[type=number] {
                 $payment_class = "payment-rejected";
             }
 
+            /* USE SNAPSHOT VALUES IF THE ORIGINAL CAKE OR SIZE WAS DELETED */
             $display_cake_name = !empty($order["cake_name"])
                 ? $order["cake_name"]
                 : "Cake Order";
+
+            $display_size = !empty($order["size_name"])
+                ? $order["size_name"]
+                : "Standard";
 
             $display_customer_email = !empty($order["email"])
                 ? $order["email"]
@@ -1625,7 +1619,7 @@ input[type=number] {
                 <div>
                     <div class="label">Size</div>
                     <div class="value">
-                        <?php echo htmlspecialchars($order["size_name"] ?? "Standard"); ?>
+                        <?php echo htmlspecialchars($display_size); ?>
                     </div>
                 </div>
 

@@ -19,13 +19,8 @@ $allowed_categories = [
     "All-Occasion Cakes"
 ];
 
-$regular_option_names = [];
-
-foreach ([6, 8, 10] as $diameter) {
-    foreach ([1, 2, 3] as $layers) {
-        $regular_option_names[] = $diameter . " inches - " . $layers . ($layers === 1 ? " Layer" : " Layers");
-    }
-}
+// Regular cake sizes are now flexible. The admin may add custom diameters
+// and the selected options will be saved in cake_sizes.size_name.
 
 $bento_option_names = [
     "4 inches - 1 Layer",
@@ -57,14 +52,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     } else {
 
-        if ($category === "Cupcakes") {
-            $allowed_options = $cupcake_option_names;
-        } elseif ($category === "Bento Cake") {
-            $allowed_options = $bento_option_names;
-        } else {
-            $allowed_options = $regular_option_names;
-        }
-
         $options = [];
         $valid_options = true;
         $seen_options = [];
@@ -74,8 +61,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $name = trim((string)$name);
             $price = $option_prices[$i] ?? "";
 
+            if ($category === "Cupcakes") {
+                $is_allowed_option = in_array($name, $cupcake_option_names, true);
+            } elseif ($category === "Bento Cake") {
+                $is_allowed_option = in_array($name, $bento_option_names, true);
+            } else {
+                // Accept any positive cake diameter with 1 to 3 layers.
+                // Example: 12 inches - 2 Layers
+                $is_allowed_option = (bool) preg_match(
+                    '/^[1-9][0-9]*(?:\\.[0-9]+)? inches - [1-3] Layers?$/',
+                    $name
+                );
+            }
+
             if (
-                !in_array($name, $allowed_options, true) ||
+                !$is_allowed_option ||
                 isset($seen_options[$name]) ||
                 !is_numeric($price) ||
                 (float)$price <= 0
@@ -607,6 +607,54 @@ input[type="file"]::file-selector-button:hover {
     font-size: 13px;
 }
 
+/* ADD CUSTOM SIZE */
+.add-size-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin: 18px 0 24px;
+    padding: 16px;
+    border: 1px dashed var(--rose);
+    border-radius: 12px;
+    background: var(--bg-soft);
+}
+
+.add-size-controls input {
+    flex: 1 1 180px;
+    min-width: 0;
+}
+
+.add-size-button {
+    border: 0;
+    border-radius: 999px;
+    padding: 11px 18px;
+    background: var(--rose-deep);
+    color: #fff;
+    font: 700 13px var(--body);
+    cursor: pointer;
+    transition: .2s ease;
+}
+
+.add-size-button:hover {
+    background: var(--rose-dark);
+    transform: translateY(-1px);
+}
+
+.size-remove {
+    border: 1px solid #e7c7c2;
+    background: #fff;
+    color: var(--rose-dark);
+    border-radius: 999px;
+    padding: 5px 10px;
+    font: 600 11px var(--body);
+    cursor: pointer;
+}
+
+.size-remove:hover {
+    background: #f9e9e7;
+}
+
 /* CUPCAKES */
 .cupcake-row {
     display: grid;
@@ -1011,43 +1059,120 @@ function addLayerChoice(card, diameter, layer) {
 
 }
 
+function createRegularSizeCard(diameter, isCustom = false) {
+
+    const card = document.createElement('section');
+    card.className = 'size-card';
+    card.dataset.diameter = String(diameter);
+
+    const heading = document.createElement('div');
+    heading.className = 'size-heading';
+
+    const h = document.createElement('h3');
+    const standardNames = {'6': 'Small', '8': 'Medium', '10': 'Large'};
+    const standardName = standardNames[String(diameter)];
+    h.textContent = (standardName ? standardName + ' — ' : '') + diameter + ' inches';
+
+    const headingRight = document.createElement('div');
+    headingRight.style.display = 'flex';
+    headingRight.style.alignItems = 'center';
+    headingRight.style.gap = '8px';
+
+    const note = document.createElement('span');
+    note.className = 'size-sub';
+    note.textContent = 'Choose available layers';
+    headingRight.append(note);
+
+    if (isCustom) {
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'size-remove';
+        remove.textContent = 'Remove size';
+        remove.addEventListener('click', () => card.remove());
+        headingRight.append(remove);
+    }
+
+    heading.append(h, headingRight);
+    card.append(heading);
+
+    const options = document.createElement('div');
+    options.className = 'layer-options';
+    [1, 2, 3].forEach(layer => addLayerChoice(options, diameter, layer));
+    card.append(options);
+
+    return card;
+}
+
 function buildRegular() {
 
-    [6, 8, 10].forEach(diameter => {
+    help.textContent =
+        'Choose the available layers and enter a price for each selected option. You can also add your own cake sizes below.';
 
-        const card = document.createElement('section');
-        card.className = 'size-card';
+    const diameters = ['6', '8', '10'];
 
-        const heading = document.createElement('div');
-        heading.className = 'size-heading';
-
-        const h = document.createElement('h3');
-
-        h.textContent =
-            (diameter === 6 ? 'Small' :
-            diameter === 8 ? 'Medium' : 'Large') +
-            ' — ' + diameter + ' inches';
-
-        const note = document.createElement('span');
-        note.className = 'size-sub';
-        note.textContent = 'Choose available layers';
-
-        heading.append(h, note);
-        card.append(heading);
-
-        const options = document.createElement('div');
-        options.className = 'layer-options';
-
-        [1, 2, 3].forEach(layer => {
-            addLayerChoice(options, diameter, layer);
-        });
-
-        card.append(options);
-
-        container.append(card);
-
+    // Recreate custom sizes if the form was submitted with an error.
+    oldNames.forEach(name => {
+        const match = String(name).match(/^([1-9][0-9]*(?:\.[0-9]+)?) inches - [1-3] Layers?$/);
+        if (match && !diameters.includes(match[1])) diameters.push(match[1]);
     });
 
+    diameters.forEach(diameter => {
+        container.append(createRegularSizeCard(
+            diameter,
+            !['6', '8', '10'].includes(String(diameter))
+        ));
+    });
+
+    const controls = document.createElement('div');
+    controls.className = 'add-size-controls';
+
+    const sizeInput = document.createElement('input');
+    sizeInput.type = 'number';
+    sizeInput.min = '1';
+    sizeInput.max = '100';
+    sizeInput.step = '0.5';
+    sizeInput.placeholder = 'Enter size in inches (e.g. 12)';
+    sizeInput.setAttribute('aria-label', 'New cake size in inches');
+
+    const addButton = document.createElement('button');
+    addButton.type = 'button';
+    addButton.className = 'add-size-button';
+    addButton.textContent = '+ Add New Size';
+
+    function addCustomSize() {
+        const diameter = Number(sizeInput.value);
+
+        if (!Number.isFinite(diameter) || diameter <= 0 || diameter > 100) {
+            alert('Please enter a valid cake size between 1 and 100 inches.');
+            sizeInput.focus();
+            return;
+        }
+
+        const exists = Array.from(
+            container.querySelectorAll('.size-card[data-diameter]')
+        ).some(card => Number(card.dataset.diameter) === diameter);
+
+        if (exists) {
+            alert('This cake size is already listed.');
+            sizeInput.focus();
+            return;
+        }
+
+        container.insertBefore(createRegularSizeCard(String(diameter), true), controls);
+        sizeInput.value = '';
+        sizeInput.focus();
+    }
+
+    addButton.addEventListener('click', addCustomSize);
+    sizeInput.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            addCustomSize();
+        }
+    });
+
+    controls.append(sizeInput, addButton);
+    container.append(controls);
 }
 
 function buildBento() {
